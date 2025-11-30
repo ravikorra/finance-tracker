@@ -1,0 +1,15 @@
+# Dependencies
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+
+# Data files (contains your personal data)
+backend/data/
+
+# Go binaries
+*.exe
+
+# IDE
+.idea/
+.vscode/
