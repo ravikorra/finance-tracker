@@ -8,7 +8,7 @@
 // For local development: localhost
 // For family access: change to your PC's IP (e.g., 192.168.1.100)
 // For production: change to your server URL
-const BASE_URL = 'http://localhost:4100/api';
+const BASE_URL = 'http://localhost:5000/api';
 
 // Generic request function - handles all HTTP calls
 async function request(endpoint, options = {}) {
