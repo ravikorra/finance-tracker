@@ -205,35 +205,41 @@ export default function App() {
 
   // ----- CALCULATIONS FOR DASHBOARD -----
 
+  // Ensure arrays are valid before calculations
+  const invArray = Array.isArray(investments) ? investments : [];
+  const expArray = Array.isArray(expenses) ? expenses : [];
+
   // Total invested and current value
-  const totalInvested = investments.reduce((sum, i) => sum + i.invested, 0);
-  const totalCurrent = investments.reduce((sum, i) => sum + i.current, 0);
+  const totalInvested = invArray.reduce((sum, i) => sum + (i.invested || 0), 0);
+  const totalCurrent = invArray.reduce((sum, i) => sum + (i.current || 0), 0);
   const totalGain = totalCurrent - totalInvested;
   const gainPct = totalInvested > 0 ? ((totalGain / totalInvested) * 100).toFixed(1) : 0;
 
   // Current month expenses
   const currentMonth = new Date().toISOString().slice(0, 7); // "2024-01"
-  const monthlyExp = expenses.filter(e => e.date?.startsWith(currentMonth));
-  const totalMonthly = monthlyExp.reduce((sum, e) => sum + e.amount, 0);
+  const monthlyExp = expArray.filter(e => e.date?.startsWith(currentMonth));
+  const totalMonthly = monthlyExp.reduce((sum, e) => sum + (e.amount || 0), 0);
 
   // Group expenses by category
   const byCategory = monthlyExp.reduce((acc, e) => {
-    acc[e.category] = (acc[e.category] || 0) + e.amount;
+    if (e.category) {
+      acc[e.category] = (acc[e.category] || 0) + (e.amount || 0);
+    }
     return acc;
   }, {});
 
   // Group expenses by family member
   const byMember = monthlyExp.reduce((acc, e) => {
     const member = e.addedBy || 'Unknown';
-    acc[member] = (acc[member] || 0) + e.amount;
+    acc[member] = (acc[member] || 0) + (e.amount || 0);
     return acc;
   }, {});
 
   // Group investments by type
-  const byInvType = investments.reduce((acc, i) => {
+  const byInvType = invArray.reduce((acc, i) => {
     if (!acc[i.type]) acc[i.type] = { invested: 0, current: 0 };
-    acc[i.type].invested += i.invested;
-    acc[i.type].current += i.current;
+    acc[i.type].invested += i.invested || 0;
+    acc[i.type].current += i.current || 0;
     return acc;
   }, {});
 
@@ -403,7 +409,7 @@ export default function App() {
             )}
 
             {/* Investment List */}
-            {investments.map(inv => (
+            {invArray.map(inv => (
               <div key={inv.id} className="card item">
                 <div className="item-header">
                   <div>
@@ -485,7 +491,7 @@ export default function App() {
             )}
 
             {/* Expense List */}
-            {expenses
+            {expArray
               .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
               .map(exp => (
                 <div key={exp.id} className="card item">
