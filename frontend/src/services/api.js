@@ -8,7 +8,7 @@
 // For local development: localhost
 // For family access: change to your PC's IP (e.g., 192.168.1.100)
 // For production: change to your server URL
-const BASE_URL = 'http://localhost:4100/api';
+const BASE_URL = 'http://localhost:5000/api';
 
 // Generic request function - handles all HTTP calls
 async function request(endpoint, options = {}) {
@@ -22,8 +22,16 @@ async function request(endpoint, options = {}) {
     throw new Error(`API Error: ${response.statusText}`);
   }
 
-  // Return JSON data
-  return response.json();
+  // Parse response
+  const result = await response.json();
+
+  // Handle new standardized response format: {success, data, error}
+  if (!result.success && result.error) {
+    throw new Error(result.error);
+  }
+
+  // Return just the data part (new format) or whole response (backward compatible)
+  return result.data !== undefined ? result.data : result;
 }
 
 // Export all API functions
