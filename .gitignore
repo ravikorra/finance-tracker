@@ -7,6 +7,9 @@ frontend/dist/
 # Data files (contains your personal data)
 backend/data/
 
+# Log files
+backend/logs/*.log
+
 # Go binaries
 *.exe
 

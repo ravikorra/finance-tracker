@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"finance-tracker/internal/config"
 	"finance-tracker/internal/logger"
@@ -11,11 +14,16 @@ import (
 )
 
 func main() {
-	// Load configuration from environment
+	// Load configuration from config.json (or environment variables)
 	cfg := config.Load()
 
-	// Initialize logger
-	log := logger.New(cfg.LogLevel, cfg.Debug)
+	// Initialize logger with configuration
+	log := logger.New(cfg.LogLevel, cfg.Debug, cfg.LogDir)
+	defer log.Close() // Ensure log file is closed on exit
+
+	// Log configuration
+	log.Info("Configuration: Port=%s, DataDir=%s, LogLevel=%s, LogDir=%s",
+		cfg.Port, cfg.DataDir, cfg.LogLevel, cfg.LogDir)
 
 	// Initialize data store
 	store := storage.NewDataStore(cfg.DataDir)
@@ -28,6 +36,7 @@ func main() {
 	// Start server
 	fmt.Printf("✅ Backend running at http://localhost:%s\n", cfg.Port)
 	fmt.Println("📁 Data stored in: " + cfg.DataDir)
+	fmt.Println("📝 Logs stored in: " + cfg.LogDir)
 	fmt.Println("\nAPI Endpoints:")
 	fmt.Println("  GET/POST   /api/investments")
 	fmt.Println("  PUT/DELETE /api/investments/{id}")
@@ -38,5 +47,18 @@ func main() {
 	fmt.Println("  POST       /api/import")
 
 	log.Info("Starting server on port %s", cfg.Port)
-	log.Error("Server error: %v", http.ListenAndServe(":"+cfg.Port, nil))
+
+	// Setup graceful shutdown
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+		<-sigChan
+		log.Info("Shutting down server gracefully...")
+		os.Exit(0)
+	}()
+
+	// Start HTTP server
+	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
+		log.Error("Server error: %v", err)
+	}
 }
