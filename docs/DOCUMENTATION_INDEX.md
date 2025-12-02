@@ -13,23 +13,31 @@
 ### Getting Started
 | File | Purpose | Read Time |
 |------|---------|-----------|
-| [`QUICK_START.md`](QUICK_START.md) | 60-second setup & key commands | 5 min |
-| [`README.md`](README.md) | Complete project overview | 10 min |
+| [`QUICK_START.md`](../QUICK_START.md) | 60-second setup & key commands | 5 min |
+| [`README.md`](../README.md) | Complete project overview | 10 min |
 | [`VERIFICATION_CHECKLIST.md`](VERIFICATION_CHECKLIST.md) | Setup verification & troubleshooting | 10 min |
 
 ### Architecture & Design
 | File | Purpose | Read Time |
 |------|---------|-----------|
-| [`STRUCTURE_TREE.md`](STRUCTURE_TREE.md) | Visual directory tree & organization | 8 min |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Detailed architecture explanation | 12 min |
-| [`docs/MIGRATION.md`](docs/MIGRATION.md) | What changed & why | 8 min |
+| [`STRUCTURE_TREE.md`](../STRUCTURE_TREE.md) | Visual directory tree & organization | 8 min |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Detailed architecture & design patterns | 15 min |
+| [`PROJECT_REVIEW.md`](PROJECT_REVIEW.md) | Comprehensive code analysis & recommendations | 12 min |
 
 ### Development
 | File | Purpose | Read Time |
 |------|---------|-----------|
-| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Development guide & best practices | 15 min |
-| [`REORGANIZATION_REPORT.md`](REORGANIZATION_REPORT.md) | Detailed reorganization report | 12 min |
-| [`REORGANIZATION_COMPLETE.md`](REORGANIZATION_COMPLETE.md) | Summary & benefits | 10 min |
+| [`DEVELOPMENT.md`](DEVELOPMENT.md) | Development guide & best practices | 20 min |
+| [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md) | Priority 1 & 2 improvements details | 15 min |
+| [`REFACTORING_SUMMARY.md`](REFACTORING_SUMMARY.md) | Backend refactoring overview | 10 min |
+| [`CLEANUP_SUMMARY.md`](CLEANUP_SUMMARY.md) | Project cleanup details | 8 min |
+
+### History & Reference
+| File | Purpose |
+|------|---------|
+| [`MIGRATION.md`](MIGRATION.md) | Migration guide & historical changes |
+| [`REORGANIZATION_REPORT.md`](../REORGANIZATION_REPORT.md) | Original reorganization report |
+| [`REORGANIZATION_COMPLETE.md`](../REORGANIZATION_COMPLETE.md) | Original cleanup summary |
 
 ---
 
@@ -41,17 +49,21 @@
 ├── QUICK_START.md                 ← 60-second setup guide
 ├── STRUCTURE_TREE.md              ← Visual directory tree
 ├── VERIFICATION_CHECKLIST.md      ← Setup checklist
-├── REORGANIZATION_REPORT.md       ← What was changed
-├── REORGANIZATION_COMPLETE.md     ← Summary & next steps
+├── REORGANIZATION_REPORT.md       ← Original reorganization details
+├── REORGANIZATION_COMPLETE.md     ← Original cleanup summary
 └── DOCUMENTATION_INDEX.md         ← This file
 ```
 
 ### Documentation Folder
 ```
 docs/
-├── ARCHITECTURE.md                ← How it's organized
-├── DEVELOPMENT.md                 ← Dev guidelines
-└── MIGRATION.md                   ← Migration guide
+├── ARCHITECTURE.md                ← Current architecture & design patterns
+├── DEVELOPMENT.md                 ← Development guide & best practices
+├── MIGRATION.md                   ← Migration & historical changes
+├── PROJECT_REVIEW.md              ← Complete code analysis
+├── IMPLEMENTATION_SUMMARY.md      ← Priority 1 & 2 improvements
+├── REFACTORING_SUMMARY.md         ← Backend modularization details
+└── CLEANUP_SUMMARY.md             ← Project cleanup work done
 ```
 
 ### Source Code
@@ -80,24 +92,34 @@ backend/
 ## 📖 Reading Guide by Use Case
 
 ### "I'm brand new to this project"
-1. Start: [`QUICK_START.md`](QUICK_START.md) - Get it running (5 min)
-2. Then: [`README.md`](README.md) - Understand what you have (10 min)
-3. Next: [`STRUCTURE_TREE.md`](STRUCTURE_TREE.md) - See how it's organized (5 min)
+1. Start: [`QUICK_START.md`](../QUICK_START.md) - Get it running (5 min)
+2. Then: [`README.md`](../README.md) - Understand what you have (10 min)
+3. Next: [`STRUCTURE_TREE.md`](../STRUCTURE_TREE.md) - See how it's organized (5 min)
+4. Deep: [`ARCHITECTURE.md`](ARCHITECTURE.md) - Learn the design (15 min)
 
 ### "I want to add a feature"
-1. Read: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) - Learn guidelines
-2. Check: [`README.md`](README.md) - See existing endpoints
-3. Reference: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - Understand patterns
+1. Read: [`DEVELOPMENT.md`](DEVELOPMENT.md) - Learn guidelines (20 min)
+2. Check: [`README.md`](../README.md) - See existing endpoints
+3. Reference: [`ARCHITECTURE.md`](ARCHITECTURE.md) - Understand patterns
+4. Code: Follow the "Adding New API Endpoint" section in DEVELOPMENT.md
+
+### "I need to understand the new improvements"
+1. Start: [`PROJECT_REVIEW.md`](PROJECT_REVIEW.md) - See what needs improvement
+2. Read: [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md) - See what was done
+3. Reference: [`ARCHITECTURE.md`](ARCHITECTURE.md) - See new patterns
+4. Dev: [`DEVELOPMENT.md`](DEVELOPMENT.md) - Learn best practices
 
 ### "I need to understand the architecture"
-1. Start: [`STRUCTURE_TREE.md`](STRUCTURE_TREE.md) - Visual overview
-2. Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - Technical details
-3. Learn: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) - Development patterns
+1. Start: [`STRUCTURE_TREE.md`](../STRUCTURE_TREE.md) - Visual overview
+2. Deep dive: [`ARCHITECTURE.md`](ARCHITECTURE.md) - Technical details
+3. Learn: [`DEVELOPMENT.md`](DEVELOPMENT.md) - Development patterns
+4. Study: [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md) - Production patterns
 
 ### "Something's broken or not working"
 1. Check: [`VERIFICATION_CHECKLIST.md`](VERIFICATION_CHECKLIST.md) - Common issues
-2. Review: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) - Debugging section
+2. Review: [`DEVELOPMENT.md`](DEVELOPMENT.md) - Setup & debugging
 3. Reference: `Makefile` - Try common commands
+4. Trace: Check structured logs for detailed error messages
 
 ### "I'm migrating from old structure"
 1. Read: [`docs/MIGRATION.md`](docs/MIGRATION.md) - What changed
