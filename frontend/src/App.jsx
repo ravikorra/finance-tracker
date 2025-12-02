@@ -311,51 +311,54 @@ export default function App() {
               </div>
             </div>
 
-            {/* Portfolio Allocation */}
-            {Object.keys(byInvType).length > 0 && (
-              <div className="card">
-                <h3>Portfolio Allocation</h3>
-                {Object.entries(byInvType).map(([type, v]) => (
-                  <div key={type} className="row">
-                    <span>{type}</span>
-                    <span>
-                      {fmt(v.current)}{' '}
-                      <span className={v.current >= v.invested ? 'gain' : 'loss'}>
-                        ({((v.current - v.invested) / v.invested * 100).toFixed(1)}%)
+            {/* Analysis Cards - 3 Column Grid */}
+            <div className="grid-3">
+              {/* Portfolio Allocation */}
+              {Object.keys(byInvType).length > 0 && (
+                <div className="card">
+                  <h3>Portfolio Allocation</h3>
+                  {Object.entries(byInvType).map(([type, v]) => (
+                    <div key={type} className="row">
+                      <span>{type}</span>
+                      <span>
+                        {fmt(v.current)}{' '}
+                        <span className={v.current >= v.invested ? 'gain' : 'loss'}>
+                          ({((v.current - v.invested) / v.invested * 100).toFixed(1)}%)
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            {/* Expenses by Category */}
-            {Object.keys(byCategory).length > 0 && (
-              <div className="card">
-                <h3>Expenses by Category</h3>
-                {Object.entries(byCategory)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([cat, amt]) => (
-                    <div key={cat} className="row">
-                      <span>{cat}</span>
+              {/* Expenses by Category */}
+              {Object.keys(byCategory).length > 0 && (
+                <div className="card">
+                  <h3>Expenses by Category</h3>
+                  {Object.entries(byCategory)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([cat, amt]) => (
+                      <div key={cat} className="row">
+                        <span>{cat}</span>
+                        <span>{fmt(amt)}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* Expenses by Member */}
+              {Object.keys(byMember).length > 0 && (
+                <div className="card">
+                  <h3>Expenses by Member</h3>
+                  {Object.entries(byMember).map(([member, amt]) => (
+                    <div key={member} className="row">
+                      <span>{member}</span>
                       <span>{fmt(amt)}</span>
                     </div>
                   ))}
-              </div>
-            )}
-
-            {/* Expenses by Member */}
-            {Object.keys(byMember).length > 0 && (
-              <div className="card">
-                <h3>Expenses by Member</h3>
-                {Object.entries(byMember).map(([member, amt]) => (
-                  <div key={member} className="row">
-                    <span>{member}</span>
-                    <span>{fmt(amt)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -409,29 +412,30 @@ export default function App() {
             )}
 
             {/* Investment List */}
-            {invArray.map(inv => (
-              <div key={inv.id} className="card item">
-                <div className="item-header">
-                  <div>
-                    <strong>{inv.name}</strong>
-                    <br/>
-                    <small>{inv.type} • {inv.date}</small>
+            <div className="items-grid">
+              {invArray.map(inv => (
+                <div key={inv.id} className="card item">
+                  <div className="item-header">
+                    <div>
+                      <h4>{inv.name}</h4>
+                      <small>{inv.type} • {inv.date}</small>
+                    </div>
+                    <div className="item-actions">
+                      <button onClick={() => editInv(inv)}>Edit</button>
+                      <button className="danger" onClick={() => deleteInv(inv.id)}>Del</button>
+                    </div>
                   </div>
-                  <div className="item-actions">
-                    <button onClick={() => editInv(inv)}>Edit</button>
-                    <button className="danger" onClick={() => deleteInv(inv.id)}>Del</button>
+                  <div className="item-footer">
+                    <span>{fmt(inv.invested)} → {fmt(inv.current)}</span>
+                    <span className={inv.current >= inv.invested ? 'gain' : 'loss'}>
+                      {inv.current >= inv.invested ? '+' : ''}
+                      {fmt(inv.current - inv.invested)} (
+                      {((inv.current - inv.invested) / inv.invested * 100).toFixed(1)}%)
+                    </span>
                   </div>
                 </div>
-                <div className="item-footer">
-                  <span>{fmt(inv.invested)} → {fmt(inv.current)}</span>
-                  <span className={inv.current >= inv.invested ? 'gain' : 'loss'}>
-                    {inv.current >= inv.invested ? '+' : ''}
-                    {fmt(inv.current - inv.invested)} (
-                    {((inv.current - inv.invested) / inv.invested * 100).toFixed(1)}%)
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
@@ -491,24 +495,25 @@ export default function App() {
             )}
 
             {/* Expense List */}
-            {expArray
-              .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
-              .map(exp => (
-                <div key={exp.id} className="card item">
-                  <div className="item-header">
-                    <div>
-                      <strong>{exp.desc}</strong>
-                      <br/>
-                      <small>{exp.date} • {exp.category} • {exp.addedBy}</small>
-                    </div>
-                    <div className="item-actions">
-                      <span className="amount">{fmt(exp.amount)}</span>
-                      <button onClick={() => editExp(exp)}>Edit</button>
-                      <button className="danger" onClick={() => deleteExp(exp.id)}>Del</button>
+            <div className="items-grid">
+              {expArray
+                .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
+                .map(exp => (
+                  <div key={exp.id} className="card item">
+                    <div className="item-header">
+                      <div>
+                        <h4>{exp.desc}</h4>
+                        <small>{exp.date} • {exp.category} • {exp.addedBy}</small>
+                      </div>
+                      <div className="item-actions">
+                        <span className="amount">{fmt(exp.amount)}</span>
+                        <button onClick={() => editExp(exp)}>Edit</button>
+                        <button className="danger" onClick={() => deleteExp(exp.id)}>Del</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+            </div>
           </div>
         )}
       </main>
