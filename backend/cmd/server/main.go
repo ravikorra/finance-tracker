@@ -29,8 +29,8 @@ func main() {
 	store := storage.NewDataStore(cfg.DataDir)
 	log.Info("Data store initialized at %s", cfg.DataDir)
 
-	// Register all routes
-	router.RegisterRoutes(store)
+	// Register all routes and get Mux router
+	r := router.RegisterRoutes(store)
 	log.Info("Routes registered")
 
 	// Start server
@@ -57,8 +57,8 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// Start HTTP server
-	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
+	// Start HTTP server with Mux router
+	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {
 		log.Error("Server error: %v", err)
 	}
 }

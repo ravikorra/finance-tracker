@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 
 	"finance-tracker/internal/middleware"
 	"finance-tracker/internal/models"
@@ -64,7 +65,8 @@ func (h *Handler) CreateInvestment(w http.ResponseWriter, r *http.Request) {
 
 // UpdateInvestment handles PUT /api/investments/{id}
 func (h *Handler) UpdateInvestment(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/api/investments/"):]
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	var updates models.Investment
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
@@ -114,7 +116,8 @@ func (h *Handler) UpdateInvestment(w http.ResponseWriter, r *http.Request) {
 
 // DeleteInvestment handles DELETE /api/investments/{id}
 func (h *Handler) DeleteInvestment(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/api/investments/"):]
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	if err := h.store.DeleteInvestment(id); err != nil {
 		middleware.ErrorResponse(w, "Investment not found", http.StatusNotFound)
@@ -170,7 +173,8 @@ func (h *Handler) CreateExpense(w http.ResponseWriter, r *http.Request) {
 
 // UpdateExpense handles PUT /api/expenses/{id}
 func (h *Handler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/api/expenses/"):]
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	var updates models.Expense
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
@@ -219,7 +223,8 @@ func (h *Handler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
 
 // DeleteExpense handles DELETE /api/expenses/{id}
 func (h *Handler) DeleteExpense(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/api/expenses/"):]
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	if err := h.store.DeleteExpense(id); err != nil {
 		middleware.ErrorResponse(w, "Expense not found", http.StatusNotFound)

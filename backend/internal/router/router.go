@@ -1,29 +1,35 @@
 package router
 
 import (
-	"net/http"
+	"github.com/gorilla/mux"
 
 	"finance-tracker/internal/handlers"
 	"finance-tracker/internal/middleware"
 	"finance-tracker/internal/storage"
 )
 
-// RegisterRoutes sets up all API routes
-func RegisterRoutes(store storage.Storage) {
+// RegisterRoutes sets up all API routes and returns the configured Mux router
+func RegisterRoutes(store storage.Storage) *mux.Router {
 	h := handlers.NewHandler(store)
+	r := mux.NewRouter()
+
+	// Apply CORS middleware to all routes
+	r.Use(middleware.CORS)
 
 	// Investment routes
-	http.HandleFunc("/api/investments", middleware.EnableCORS(h.InvestmentsHandler))
-	http.HandleFunc("/api/investments/", middleware.EnableCORS(h.InvestmentHandler))
+	r.HandleFunc("/api/investments", h.InvestmentsHandler).Methods("GET", "POST", "OPTIONS")
+	r.HandleFunc("/api/investments/{id}", h.InvestmentHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 
 	// Expense routes
-	http.HandleFunc("/api/expenses", middleware.EnableCORS(h.ExpensesHandler))
-	http.HandleFunc("/api/expenses/", middleware.EnableCORS(h.ExpenseHandler))
+	r.HandleFunc("/api/expenses", h.ExpensesHandler).Methods("GET", "POST", "OPTIONS")
+	r.HandleFunc("/api/expenses/{id}", h.ExpenseHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 
 	// Settings routes
-	http.HandleFunc("/api/settings", middleware.EnableCORS(h.SettingsHandler))
+	r.HandleFunc("/api/settings", h.SettingsHandler).Methods("GET", "PUT", "OPTIONS")
 
 	// Export/Import routes
-	http.HandleFunc("/api/export", middleware.EnableCORS(h.ExportData))
-	http.HandleFunc("/api/import", middleware.EnableCORS(h.ImportData))
+	r.HandleFunc("/api/export", h.ExportData).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/import", h.ImportData).Methods("POST", "OPTIONS")
+
+	return r
 }
