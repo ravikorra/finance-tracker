@@ -11,22 +11,6 @@ backend/
 ├── cmd/
 │   └── server/
 │       └── main.go                 ← Application entry point
-├── internal/                       ← Private code (not importable by others)
-│   ├── handlers/
-│   │   ├── authentication/
-│   │   │   └── handlers.go         ← Auth endpoints
-│   │   └── finance/
-│   │       ├── handlers.go         ← Finance API endpoints
-│   │       └── datastore.go        ← Data persistence
-│   ├── middleware/                 ← Middleware (CORS, Auth, Logging)
-│   ├── models/
-│   │   └── finance.go              ← Data structures (Investment, Expense, etc.)
-│   └── router/
-│       └── router.go               ← Route definitions
-├── pkg/                            ← Reusable packages
-│   ├── logger/
-│   │   └── logger.go               ← Logging utility
-│   └── database/                   ← Database utilities (future)
 ├── config/
 │   └── config.json                 ← Configuration file
 ├── data/                           ← Runtime data (generated)
@@ -36,6 +20,13 @@ backend/
 ├── go.mod                          ← Go module definition
 └── go.sum                          ← Dependency lock file
 ```
+
+**Backend Features:**
+- Single-file monolithic design for simplicity
+- In-memory data store with file persistence
+- RESTful API endpoints for investments, expenses, and settings
+- CORS enabled for frontend communication
+- Zero external dependencies (only github.com/google/uuid)
 
 ### Organized React Frontend Structure
 
@@ -79,7 +70,7 @@ go mod download
 go run ./cmd/server/main.go
 ```
 
-Server runs on: `http://localhost:4100`
+Server runs on: `http://localhost:5000`
 
 ### Frontend Setup
 
