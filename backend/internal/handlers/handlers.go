@@ -24,6 +24,19 @@ func NewHandler(store storage.Storage) *Handler {
 	return &Handler{store: store}
 }
 
+// ----- HEALTH CHECK -----
+
+// HealthCheck handles GET /health
+func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
+	health := map[string]interface{}{
+		"status":  "healthy",
+		"version": "1.0.0",
+		"service": "finance-tracker-api",
+		"time":    time.Now().Format(time.RFC3339),
+	}
+	middleware.JSONResponse(w, health, http.StatusOK)
+}
+
 // ----- INVESTMENTS -----
 
 // GetInvestments handles GET /api/investments

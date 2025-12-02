@@ -16,20 +16,26 @@ func RegisterRoutes(store storage.Storage) *mux.Router {
 	// Apply CORS middleware to all routes
 	r.Use(middleware.CORS)
 
+	// Health check endpoint (unversioned, always available)
+	r.HandleFunc("/health", h.HealthCheck).Methods("GET", "OPTIONS")
+
+	// API v1 routes
+	api := r.PathPrefix("/v1/api").Subrouter()
+
 	// Investment routes
-	r.HandleFunc("/api/investments", h.InvestmentsHandler).Methods("GET", "POST", "OPTIONS")
-	r.HandleFunc("/api/investments/{id}", h.InvestmentHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	api.HandleFunc("/investments", h.InvestmentsHandler).Methods("GET", "POST", "OPTIONS")
+	api.HandleFunc("/investments/{id}", h.InvestmentHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 
 	// Expense routes
-	r.HandleFunc("/api/expenses", h.ExpensesHandler).Methods("GET", "POST", "OPTIONS")
-	r.HandleFunc("/api/expenses/{id}", h.ExpenseHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
+	api.HandleFunc("/expenses", h.ExpensesHandler).Methods("GET", "POST", "OPTIONS")
+	api.HandleFunc("/expenses/{id}", h.ExpenseHandler).Methods("GET", "PUT", "DELETE", "OPTIONS")
 
 	// Settings routes
-	r.HandleFunc("/api/settings", h.SettingsHandler).Methods("GET", "PUT", "OPTIONS")
+	api.HandleFunc("/settings", h.SettingsHandler).Methods("GET", "PUT", "OPTIONS")
 
 	// Export/Import routes
-	r.HandleFunc("/api/export", h.ExportData).Methods("GET", "OPTIONS")
-	r.HandleFunc("/api/import", h.ImportData).Methods("POST", "OPTIONS")
+	api.HandleFunc("/export", h.ExportData).Methods("GET", "OPTIONS")
+	api.HandleFunc("/import", h.ImportData).Methods("POST", "OPTIONS")
 
 	return r
 }

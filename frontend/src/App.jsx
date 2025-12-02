@@ -52,6 +52,16 @@ export default function App() {
   const loadData = async () => {
     try {
       setError(null);
+      
+      // Check if backend is available first
+      const isBackendHealthy = await api.checkHealth();
+      if (!isBackendHealthy) {
+        setError('⚠️ Backend server is not running. Please start the server on port 5000.');
+        setLoading(false);
+        return; // Stop here - don't make API calls if server is down
+      }
+      
+      // Backend is healthy - proceed with data loading
       // Promise.all runs all 3 requests in parallel (faster)
       const [inv, exp, sett] = await Promise.all([
         api.getInvestments(),
@@ -62,7 +72,7 @@ export default function App() {
       setExpenses(exp || []);
       setSettings(sett);
     } catch (err) {
-      setError('Failed to connect to server. Is backend running on port 5000?');
+      setError('Failed to load data: ' + err.message);
     } finally {
       setLoading(false);
     }
