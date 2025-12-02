@@ -1,45 +1,97 @@
 package config
 
 import (
+	"encoding/json"
+	"log"
 	"os"
-	"strconv"
+	"path/filepath"
 )
 
 // Config holds application configuration
 type Config struct {
-	Port     string
-	DataDir  string
-	LogLevel string
-	Debug    bool
+	Port     string `json:"port"`
+	DataDir  string `json:"data_dir"`
+	LogLevel string `json:"log_level"`
+	LogDir   string `json:"log_dir"`
+	Debug    bool   `json:"debug"`
 }
 
-// Load reads configuration from environment variables with sensible defaults
+// Load reads configuration from config.json file
+// Falls back to environment variables and defaults if file not found
 func Load() *Config {
-	return &Config{
-		Port:     getEnv("PORT", "5000"),
-		DataDir:  getEnv("DATA_DIR", "./data"),
-		LogLevel: getEnv("LOG_LEVEL", "info"),
-		Debug:    getBoolEnv("DEBUG", false),
+	cfg := &Config{
+		Port:     "5000",
+		DataDir:  "./data",
+		LogLevel: "info",
+		LogDir:   "./logs",
+		Debug:    false,
 	}
+
+	// Try to load from config.json
+	configPath := getConfigPath()
+	if data, err := os.ReadFile(configPath); err == nil {
+		if err := json.Unmarshal(data, cfg); err != nil {
+			log.Printf("Warning: Failed to parse config.json: %v. Using defaults.", err)
+		} else {
+			log.Printf("Configuration loaded from: %s", configPath)
+		}
+	} else {
+		log.Printf("Config file not found at %s. Using defaults.", configPath)
+	}
+
+	// Environment variables can override config file
+	if port := os.Getenv("PORT"); port != "" {
+		cfg.Port = port
+	}
+	if dataDir := os.Getenv("DATA_DIR"); dataDir != "" {
+		cfg.DataDir = dataDir
+	}
+	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
+		cfg.LogLevel = logLevel
+	}
+	if logDir := os.Getenv("LOG_DIR"); logDir != "" {
+		cfg.LogDir = logDir
+	}
+	if debug := os.Getenv("DEBUG"); debug == "true" {
+		cfg.Debug = true
+	}
+
+	return cfg
 }
 
-// getEnv returns environment variable or default
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+// getConfigPath returns the path to config.json
+// Looks in ./config/config.json or ../config/config.json
+func getConfigPath() string {
+	// Try current directory first
+	if _, err := os.Stat("config/config.json"); err == nil {
+		return "config/config.json"
 	}
-	return defaultValue
+
+	// Try parent directory (for when running from cmd/server)
+	if _, err := os.Stat("../../config/config.json"); err == nil {
+		return "../../config/config.json"
+	}
+
+	// Default location
+	return "config/config.json"
 }
 
-// getBoolEnv returns boolean environment variable or default
-func getBoolEnv(key string, defaultValue bool) bool {
-	val := os.Getenv(key)
-	if val == "" {
-		return defaultValue
+// Save writes current configuration to config.json
+func (c *Config) Save() error {
+	configPath := getConfigPath()
+
+	// Ensure config directory exists
+	dir := filepath.Dir(configPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
 	}
-	b, err := strconv.ParseBool(val)
+
+	// Marshal config to JSON with indentation
+	data, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
-		return defaultValue
+		return err
 	}
-	return b
+
+	// Write to file
+	return os.WriteFile(configPath, data, 0644)
 }
