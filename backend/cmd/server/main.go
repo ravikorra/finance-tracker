@@ -2,24 +2,32 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
+	"finance-tracker/internal/config"
+	"finance-tracker/internal/logger"
 	"finance-tracker/internal/router"
 	"finance-tracker/internal/storage"
 )
 
 func main() {
+	// Load configuration from environment
+	cfg := config.Load()
+
+	// Initialize logger
+	log := logger.New(cfg.LogLevel, cfg.Debug)
+
 	// Initialize data store
-	store := storage.NewDataStore("./data")
+	store := storage.NewDataStore(cfg.DataDir)
+	log.Info("Data store initialized at %s", cfg.DataDir)
 
 	// Register all routes
 	router.RegisterRoutes(store)
+	log.Info("Routes registered")
 
 	// Start server
-	port := "5000"
-	fmt.Printf("✅ Backend running at http://localhost:%s\n", port)
-	fmt.Println("📁 Data stored in: ./data")
+	fmt.Printf("✅ Backend running at http://localhost:%s\n", cfg.Port)
+	fmt.Println("📁 Data stored in: " + cfg.DataDir)
 	fmt.Println("\nAPI Endpoints:")
 	fmt.Println("  GET/POST   /api/investments")
 	fmt.Println("  PUT/DELETE /api/investments/{id}")
@@ -29,5 +37,6 @@ func main() {
 	fmt.Println("  GET        /api/export")
 	fmt.Println("  POST       /api/import")
 
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Info("Starting server on port %s", cfg.Port)
+	log.Error("Server error: %v", http.ListenAndServe(":"+cfg.Port, nil))
 }

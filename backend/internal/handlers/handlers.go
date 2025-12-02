@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,13 +13,13 @@ import (
 	"finance-tracker/internal/storage"
 )
 
-// Handler wraps the datastore and provides HTTP handlers
+// Handler wraps the storage and provides HTTP handlers
 type Handler struct {
-	store *storage.DataStore
+	store storage.Storage
 }
 
-// NewHandler creates a new handler with the given datastore
-func NewHandler(store *storage.DataStore) *Handler {
+// NewHandler creates a new handler with the given storage
+func NewHandler(store storage.Storage) *Handler {
 	return &Handler{store: store}
 }
 
@@ -34,7 +35,7 @@ func (h *Handler) GetInvestments(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateInvestment(w http.ResponseWriter, r *http.Request) {
 	var inv models.Investment
 	if err := json.NewDecoder(r.Body).Decode(&inv); err != nil {
-		middleware.ErrorResponse(w, "Invalid JSON", http.StatusBadRequest)
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -42,8 +43,21 @@ func (h *Handler) CreateInvestment(w http.ResponseWriter, r *http.Request) {
 	inv.CreatedAt = time.Now().Format(time.RFC3339)
 	inv.UpdatedAt = inv.CreatedAt
 
-	h.store.AddInvestment(inv)
-	h.store.SaveInvestments()
+	// Validate investment
+	if err := inv.Validate(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Validation error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.AddInvestment(inv); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to add investment: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveInvestments(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save investment: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	middleware.JSONResponse(w, inv, http.StatusCreated)
 }
@@ -54,7 +68,7 @@ func (h *Handler) UpdateInvestment(w http.ResponseWriter, r *http.Request) {
 
 	var updates models.Investment
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
-		middleware.ErrorResponse(w, "Invalid JSON", http.StatusBadRequest)
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -79,8 +93,21 @@ func (h *Handler) UpdateInvestment(w http.ResponseWriter, r *http.Request) {
 	updates.CreatedAt = original.CreatedAt
 	updates.UpdatedAt = time.Now().Format(time.RFC3339)
 
-	h.store.UpdateInvestment(id, updates)
-	h.store.SaveInvestments()
+	// Validate before updating
+	if err := updates.Validate(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Validation error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.UpdateInvestment(id, updates); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to update investment: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveInvestments(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save investment: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	middleware.JSONResponse(w, updates, http.StatusOK)
 }
@@ -89,13 +116,17 @@ func (h *Handler) UpdateInvestment(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteInvestment(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/investments/"):]
 
-	if !h.store.DeleteInvestment(id) {
+	if err := h.store.DeleteInvestment(id); err != nil {
 		middleware.ErrorResponse(w, "Investment not found", http.StatusNotFound)
 		return
 	}
 
-	h.store.SaveInvestments()
-	middleware.JSONResponse(w, map[string]bool{"success": true}, http.StatusOK)
+	if err := h.store.SaveInvestments(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save investment: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	middleware.SuccessMessage(w, "Investment deleted successfully")
 }
 
 // ----- EXPENSES -----
@@ -110,7 +141,7 @@ func (h *Handler) GetExpenses(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateExpense(w http.ResponseWriter, r *http.Request) {
 	var exp models.Expense
 	if err := json.NewDecoder(r.Body).Decode(&exp); err != nil {
-		middleware.ErrorResponse(w, "Invalid JSON", http.StatusBadRequest)
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -118,8 +149,21 @@ func (h *Handler) CreateExpense(w http.ResponseWriter, r *http.Request) {
 	exp.CreatedAt = time.Now().Format(time.RFC3339)
 	exp.UpdatedAt = exp.CreatedAt
 
-	h.store.AddExpense(exp)
-	h.store.SaveExpenses()
+	// Validate expense
+	if err := exp.Validate(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Validation error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.AddExpense(exp); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to add expense: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveExpenses(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save expense: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	middleware.JSONResponse(w, exp, http.StatusCreated)
 }
@@ -130,7 +174,7 @@ func (h *Handler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
 
 	var updates models.Expense
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
-		middleware.ErrorResponse(w, "Invalid JSON", http.StatusBadRequest)
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -154,8 +198,21 @@ func (h *Handler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
 	updates.CreatedAt = original.CreatedAt
 	updates.UpdatedAt = time.Now().Format(time.RFC3339)
 
-	h.store.UpdateExpense(id, updates)
-	h.store.SaveExpenses()
+	// Validate before updating
+	if err := updates.Validate(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Validation error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.UpdateExpense(id, updates); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to update expense: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveExpenses(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save expense: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	middleware.JSONResponse(w, updates, http.StatusOK)
 }
@@ -164,13 +221,17 @@ func (h *Handler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteExpense(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/expenses/"):]
 
-	if !h.store.DeleteExpense(id) {
+	if err := h.store.DeleteExpense(id); err != nil {
 		middleware.ErrorResponse(w, "Expense not found", http.StatusNotFound)
 		return
 	}
 
-	h.store.SaveExpenses()
-	middleware.JSONResponse(w, map[string]bool{"success": true}, http.StatusOK)
+	if err := h.store.SaveExpenses(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save expense: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	middleware.SuccessMessage(w, "Expense deleted successfully")
 }
 
 // ----- SETTINGS -----
@@ -185,12 +246,19 @@ func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	var settings models.Settings
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
-		middleware.ErrorResponse(w, "Invalid JSON", http.StatusBadRequest)
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	h.store.UpdateSettings(settings)
-	h.store.SaveSettings()
+	if err := h.store.UpdateSettings(settings); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to update settings: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveSettings(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save settings: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	middleware.JSONResponse(w, settings, http.StatusOK)
 }
@@ -209,16 +277,31 @@ func (h *Handler) ExportData(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ImportData(w http.ResponseWriter, r *http.Request) {
 	var data models.ExportData
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		middleware.ErrorResponse(w, "Invalid JSON", http.StatusBadRequest)
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	h.store.ImportData(data)
-	h.store.SaveInvestments()
-	h.store.SaveExpenses()
-	h.store.SaveSettings()
+	if err := h.store.ImportData(data); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to import data: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	middleware.JSONResponse(w, map[string]bool{"success": true}, http.StatusOK)
+	if err := h.store.SaveInvestments(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save investments: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveExpenses(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save expenses: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveSettings(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save settings: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	middleware.SuccessMessage(w, "Data imported successfully")
 }
 
 // ----- ROUTING HELPERS -----

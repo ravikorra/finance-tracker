@@ -9,7 +9,7 @@ import (
 )
 
 // RegisterRoutes sets up all API routes
-func RegisterRoutes(store *storage.DataStore) {
+func RegisterRoutes(store storage.Storage) {
 	h := handlers.NewHandler(store)
 
 	// Investment routes
