@@ -236,14 +236,6 @@ export default function App() {
 
   // Show loading state
   if (isInitialLoading) return <LoadingSpinner message="Loading your financial data..." />;
-  
-  // Show error state
-  if (globalError) return (
-    <ErrorMessage 
-      message={globalError} 
-      onRetry={loadData}
-    />
-  );
 
   return (
     <div className="app">
@@ -260,11 +252,21 @@ export default function App() {
         onTabChange={setTab}
       />
 
-      {/* Display any loading or error states from hooks */}
-      {(investmentsError || expensesError || settingsError) && (
-        <ErrorMessage 
-          message={investmentsError || expensesError || settingsError}
-        />
+      {/* Display any errors as banner notifications */}
+      {globalError && (
+        <div style={{ padding: '0 2rem', paddingTop: '1rem' }}>
+          <ErrorMessage 
+            message={globalError} 
+            onRetry={loadData}
+          />
+        </div>
+      )}
+      {(investmentsError || expensesError || settingsError) && !globalError && (
+        <div style={{ padding: '0 2rem', paddingTop: '1rem' }}>
+          <ErrorMessage 
+            message={investmentsError || expensesError || settingsError}
+          />
+        </div>
       )}
 
       {/* MAIN CONTENT */}
