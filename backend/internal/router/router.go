@@ -17,7 +17,7 @@ func RegisterRoutes(store storage.Storage) *mux.Router {
 	r.Use(middleware.CORS)
 
 	// Health check endpoint (unversioned, always available)
-	r.HandleFunc("/health", h.HealthCheck).Methods("GET", "OPTIONS")
+	r.HandleFunc("/health", h.HealthCheck).Methods("GET")
 
 	// API v1 routes
 	api := r.PathPrefix("/v1/api").Subrouter()
@@ -34,8 +34,8 @@ func RegisterRoutes(store storage.Storage) *mux.Router {
 	api.HandleFunc("/settings", h.SettingsHandler).Methods("GET", "PUT", "OPTIONS")
 
 	// Export/Import routes
-	api.HandleFunc("/export", h.ExportData).Methods("GET", "OPTIONS")
-	api.HandleFunc("/import", h.ImportData).Methods("POST", "OPTIONS")
+	api.HandleFunc("/export", h.ExportData).Methods("GET")
+	api.HandleFunc("/import", h.ImportData).Methods("POST")
 
 	return r
 }

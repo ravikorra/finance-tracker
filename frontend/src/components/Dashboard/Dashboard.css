@@ -1,0 +1,99 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.card.hero {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.card .label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.card .value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: white;
+  display: block;
+  margin: 0.5rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .gain {
+  color: #10b981;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.card .loss {
+  color: #ef4444;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card .row:last-child {
+  border-bottom: none;
+}
+
+.card .row span:first-child {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.card .row span:last-child {
+  color: white;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px) {
+  .card .value {
+    font-size: 2rem;
+  }
+
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}

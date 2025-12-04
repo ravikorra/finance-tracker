@@ -1,0 +1,45 @@
+.app-navigation {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+  background: rgba(15, 23, 42, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 74px;
+  z-index: 90;
+}
+
+.nav-tab {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  text-transform: capitalize;
+}
+
+.nav-tab:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-tab.active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+@media (max-width: 767px) {
+  .app-navigation {
+    justify-content: space-around;
+    padding: 0 1rem;
+  }
+  
+  .nav-tab {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+}

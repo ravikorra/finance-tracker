@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
+import { Header } from './components/Layout/Header';
+import { Navigation } from './components/Layout/Navigation';
+import { Dashboard } from './components/Dashboard/Dashboard';
+import { LoadingSpinner } from './components/common/LoadingSpinner';
+import { ErrorMessage } from './components/common/ErrorMessage';
+import { useInvestments } from './hooks/useInvestments';
+import { useExpenses } from './hooks/useExpenses';
+import { useSettings } from './hooks/useSettings';
+import { formatCurrency, getTodayDate } from './utils/formatters';
 import { api } from './api';
 import './App.css';
 
-// ==========================================
-// HELPER FUNCTIONS
-// ==========================================
-
-// Format number as Indian Rupees: 100000 -> ₹1,00,000
-const fmt = (n) => '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
-
-// Get today's date in YYYY-MM-DD format (for date inputs)
-const today = () => new Date().toISOString().split('T')[0];
+// Legacy helper for backwards compatibility
+const fmt = formatCurrency;
+const today = getTodayDate;
 
 // ==========================================
 // MAIN APP COMPONENT
@@ -18,19 +21,11 @@ const today = () => new Date().toISOString().split('T')[0];
 
 export default function App() {
   // ----- STATE VARIABLES -----
-  // useState creates a variable that, when changed, re-renders the UI
-  
-  const [tab, setTab] = useState('dashboard');        // Current tab: dashboard/investments/expenses
-  const [investments, setInvestments] = useState([]); // All investments from backend
-  const [expenses, setExpenses] = useState([]);       // All expenses from backend
-  const [settings, setSettings] = useState({          // App settings (categories, members)
-    categories: [], investmentTypes: [], members: []
-  });
-  
-  const [loading, setLoading] = useState(true);       // Show loading spinner
-  const [error, setError] = useState(null);           // Error message if backend fails
-  const [showForm, setShowForm] = useState(null);     // Which form to show: 'investment' or 'expense'
-  const [editingItem, setEditingItem] = useState(null); // ID of item being edited (null = creating new)
+  const [tab, setTab] = useState('dashboard');
+  const [showForm, setShowForm] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [globalError, setGlobalError] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Form data for investments
   const [invForm, setInvForm] = useState({
@@ -42,39 +37,61 @@ export default function App() {
     desc: '', amount: '', category: 'Food', date: today(), addedBy: 'Ravi'
   });
 
+  // Custom hooks for data management
+  const {
+    investments,
+    loading: investmentsLoading,
+    error: investmentsError,
+    fetchInvestments,
+    addInvestment,
+    updateInvestment,
+    deleteInvestment,
+  } = useInvestments();
+
+  const {
+    expenses,
+    loading: expensesLoading,
+    error: expensesError,
+    fetchExpenses,
+    addExpense,
+    updateExpense,
+    deleteExpense,
+  } = useExpenses();
+
+  const {
+    settings,
+    loading: settingsLoading,
+    error: settingsError,
+    fetchSettings,
+  } = useSettings();
+
   // ----- LOAD DATA ON START -----
-  // useEffect runs code when component loads (like window.onload)
   useEffect(() => {
     loadData();
-  }, []); // Empty array = run only once when app starts
+  }, []);
 
   // Fetch all data from backend
   const loadData = async () => {
+    setIsInitialLoading(true);
+    setGlobalError(null);
+
     try {
-      setError(null);
-      
       // Check if backend is available first
       const isBackendHealthy = await api.checkHealth();
       if (!isBackendHealthy) {
-        setError('⚠️ Backend server is not running. Please start the server on port 5000.');
-        setLoading(false);
-        return; // Stop here - don't make API calls if server is down
+        throw new Error('⚠️ Backend server is not running. Please start the server on port 5000.');
       }
-      
-      // Backend is healthy - proceed with data loading
-      // Promise.all runs all 3 requests in parallel (faster)
-      const [inv, exp, sett] = await Promise.all([
-        api.getInvestments(),
-        api.getExpenses(),
-        api.getSettings()
+
+      // Load data in parallel
+      await Promise.all([
+        fetchInvestments(),
+        fetchExpenses(),
+        fetchSettings(),
       ]);
-      setInvestments(inv || []);
-      setExpenses(exp || []);
-      setSettings(sett);
     } catch (err) {
-      setError('Failed to load data: ' + err.message);
+      setGlobalError(err.message);
     } finally {
-      setLoading(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -89,20 +106,17 @@ export default function App() {
       const data = {
         name: invForm.name,
         type: invForm.type,
-        invested: parseFloat(invForm.invested),        // Convert string to number
-        current: parseFloat(invForm.current) || parseFloat(invForm.invested), // Default to invested
+        invested: parseFloat(invForm.invested),
+        current: parseFloat(invForm.current) || parseFloat(invForm.invested),
         date: invForm.date
       };
       
       if (editingItem) {
         // UPDATE existing
-        const updated = await api.updateInvestment(editingItem, data);
-        // Replace old item with updated one in state
-        setInvestments(investments.map(i => i.id === editingItem ? updated : i));
+        await updateInvestment(editingItem, data);
       } else {
         // CREATE new
-        const created = await api.createInvestment(data);
-        setInvestments([...investments, created]); // Add to list
+        await addInvestment(data);
       }
       resetInvForm();
     } catch (err) {
@@ -122,7 +136,7 @@ export default function App() {
     setInvForm({
       name: inv.name,
       type: inv.type,
-      invested: String(inv.invested), // Convert number to string for input
+      invested: String(inv.invested),
       current: String(inv.current),
       date: inv.date
     });
@@ -133,8 +147,7 @@ export default function App() {
   // Delete investment
   const deleteInv = async (id) => {
     if (!confirm('Delete this investment?')) return;
-    await api.deleteInvestment(id);
-    setInvestments(investments.filter(i => i.id !== id)); // Remove from state
+    await deleteInvestment(id);
   };
 
   // ----- EXPENSE FUNCTIONS (same pattern) -----
@@ -152,11 +165,9 @@ export default function App() {
       };
       
       if (editingItem) {
-        const updated = await api.updateExpense(editingItem, data);
-        setExpenses(expenses.map(e => e.id === editingItem ? updated : e));
+        await updateExpense(editingItem, data);
       } else {
-        const created = await api.createExpense(data);
-        setExpenses([...expenses, created]);
+        await addExpense(data);
       }
       resetExpForm();
     } catch (err) {
@@ -184,8 +195,7 @@ export default function App() {
 
   const deleteExp = async (id) => {
     if (!confirm('Delete this expense?')) return;
-    await api.deleteExpense(id);
-    setExpenses(expenses.filter(e => e.id !== id));
+    await deleteExpense(id);
   };
 
   // ----- EXPORT/IMPORT -----
@@ -213,163 +223,58 @@ export default function App() {
     }
   };
 
-  // ----- CALCULATIONS FOR DASHBOARD -----
+  // ----- RENDER UI -----
 
-  // Ensure arrays are valid before calculations
+  // Safe arrays for rendering
   const invArray = Array.isArray(investments) ? investments : [];
   const expArray = Array.isArray(expenses) ? expenses : [];
-
-  // Total invested and current value
-  const totalInvested = invArray.reduce((sum, i) => sum + (i.invested || 0), 0);
-  const totalCurrent = invArray.reduce((sum, i) => sum + (i.current || 0), 0);
-  const totalGain = totalCurrent - totalInvested;
-  const gainPct = totalInvested > 0 ? ((totalGain / totalInvested) * 100).toFixed(1) : 0;
-
-  // Current month expenses
-  const currentMonth = new Date().toISOString().slice(0, 7); // "2024-01"
+  
+  // Current month expenses for Expenses tab
+  const currentMonth = new Date().toISOString().slice(0, 7);
   const monthlyExp = expArray.filter(e => e.date?.startsWith(currentMonth));
   const totalMonthly = monthlyExp.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // Group expenses by category
-  const byCategory = monthlyExp.reduce((acc, e) => {
-    if (e.category) {
-      acc[e.category] = (acc[e.category] || 0) + (e.amount || 0);
-    }
-    return acc;
-  }, {});
-
-  // Group expenses by family member
-  const byMember = monthlyExp.reduce((acc, e) => {
-    const member = e.addedBy || 'Unknown';
-    acc[member] = (acc[member] || 0) + (e.amount || 0);
-    return acc;
-  }, {});
-
-  // Group investments by type
-  const byInvType = invArray.reduce((acc, i) => {
-    if (!acc[i.type]) acc[i.type] = { invested: 0, current: 0 };
-    acc[i.type].invested += i.invested || 0;
-    acc[i.type].current += i.current || 0;
-    return acc;
-  }, {});
-
-  // ----- RENDER UI -----
-
   // Show loading state
-  if (loading) return <div className="loading">Loading...</div>;
+  if (isInitialLoading) return <LoadingSpinner message="Loading your financial data..." />;
   
   // Show error state
-  if (error) return (
-    <div className="error">
-      {error}
-      <br/>
-      <button onClick={loadData}>Retry</button>
-    </div>
+  if (globalError) return (
+    <ErrorMessage 
+      message={globalError} 
+      onRetry={loadData}
+    />
   );
 
   return (
     <div className="app">
       {/* HEADER */}
-      <header>
-        <h1>💰 Finance Tracker</h1>
-        <div className="actions">
-          <button onClick={handleExport}>Export</button>
-          <label className="btn">
-            Import
-            <input type="file" accept=".json" onChange={handleImport} hidden />
-          </label>
-          <button onClick={loadData}>↻</button>
-        </div>
-      </header>
+      <Header 
+        onExport={handleExport}
+        onImport={handleImport}
+        onRefresh={loadData}
+      />
 
       {/* NAVIGATION TABS */}
-      <nav>
-        {['dashboard', 'investments', 'expenses'].map(t => (
-          <button
-            key={t}
-            className={tab === t ? 'active' : ''}
-            onClick={() => setTab(t)}
-          >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
-        ))}
-      </nav>
+      <Navigation 
+        activeTab={tab}
+        onTabChange={setTab}
+      />
+
+      {/* Display any loading or error states from hooks */}
+      {(investmentsError || expensesError || settingsError) && (
+        <ErrorMessage 
+          message={investmentsError || expensesError || settingsError}
+        />
+      )}
 
       {/* MAIN CONTENT */}
       <main>
         {/* ===== DASHBOARD TAB ===== */}
         {tab === 'dashboard' && (
-          <div className="dashboard">
-            {/* Net Worth Card */}
-            <div className="card hero">
-              <span className="label">Net Worth</span>
-              <span className="value">{fmt(totalCurrent)}</span>
-              <span className={totalGain >= 0 ? 'gain' : 'loss'}>
-                {totalGain >= 0 ? '↑' : '↓'} {fmt(Math.abs(totalGain))} ({gainPct}%)
-              </span>
-            </div>
-
-            {/* Summary Cards */}
-            <div className="grid-2">
-              <div className="card">
-                <span className="label">Invested</span>
-                <span className="value">{fmt(totalInvested)}</span>
-              </div>
-              <div className="card">
-                <span className="label">This Month Spent</span>
-                <span className="value loss">{fmt(totalMonthly)}</span>
-              </div>
-            </div>
-
-            {/* Analysis Cards - 3 Column Grid */}
-            <div className="grid-3">
-              {/* Portfolio Allocation */}
-              {Object.keys(byInvType).length > 0 && (
-                <div className="card">
-                  <h3>Portfolio Allocation</h3>
-                  {Object.entries(byInvType).map(([type, v]) => (
-                    <div key={type} className="row">
-                      <span>{type}</span>
-                      <span>
-                        {fmt(v.current)}{' '}
-                        <span className={v.current >= v.invested ? 'gain' : 'loss'}>
-                          ({((v.current - v.invested) / v.invested * 100).toFixed(1)}%)
-                        </span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Expenses by Category */}
-              {Object.keys(byCategory).length > 0 && (
-                <div className="card">
-                  <h3>Expenses by Category</h3>
-                  {Object.entries(byCategory)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([cat, amt]) => (
-                      <div key={cat} className="row">
-                        <span>{cat}</span>
-                        <span>{fmt(amt)}</span>
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              {/* Expenses by Member */}
-              {Object.keys(byMember).length > 0 && (
-                <div className="card">
-                  <h3>Expenses by Member</h3>
-                  {Object.entries(byMember).map(([member, amt]) => (
-                    <div key={member} className="row">
-                      <span>{member}</span>
-                      <span>{fmt(amt)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <Dashboard 
+            investments={investments}
+            expenses={expenses}
+          />
         )}
 
         {/* ===== INVESTMENTS TAB ===== */}
@@ -392,7 +297,7 @@ export default function App() {
                     value={invForm.type}
                     onChange={e => setInvForm({...invForm, type: e.target.value})}
                   >
-                    {settings.investmentTypes.map(t => <option key={t}>{t}</option>)}
+                    {settings?.investmentTypes?.map(t => <option key={t}>{t}</option>)}
                   </select>
                   <input
                     type="date"
@@ -481,13 +386,13 @@ export default function App() {
                     value={expForm.category}
                     onChange={e => setExpForm({...expForm, category: e.target.value})}
                   >
-                    {settings.categories.map(c => <option key={c}>{c}</option>)}
+                    {settings?.categories?.map(c => <option key={c}>{c}</option>)}
                   </select>
                   <select
                     value={expForm.addedBy}
                     onChange={e => setExpForm({...expForm, addedBy: e.target.value})}
                   >
-                    {settings.members.map(m => <option key={m}>{m}</option>)}
+                    {settings?.members?.map(m => <option key={m}>{m}</option>)}
                   </select>
                   <input
                     type="date"
