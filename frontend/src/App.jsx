@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard/Dashboard';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { ErrorMessage } from './components/common/ErrorMessage';
 import { useInvestments } from './hooks/useInvestments';
+import { useIncomes } from './hooks/useIncomes';
 import { useExpenses } from './hooks/useExpenses';
 import { useSettings } from './hooks/useSettings';
 import { formatCurrency, getTodayDate } from './utils/formatters';
@@ -37,6 +38,11 @@ export default function App() {
     desc: '', amount: '', category: 'Food', date: today(), addedBy: 'Ravi'
   });
 
+  // Form data for incomes
+  const [incForm, setIncForm] = useState({
+    source: '', amount: '', category: 'Salary', date: today(), addedBy: 'Ravi'
+  });
+
   // Custom hooks for data management
   const {
     investments,
@@ -47,6 +53,16 @@ export default function App() {
     updateInvestment,
     deleteInvestment,
   } = useInvestments();
+
+  const {
+    incomes,
+    loading: incomesLoading,
+    error: incomesError,
+    refreshIncomes,
+    addIncome,
+    updateIncome,
+    deleteIncome,
+  } = useIncomes();
 
   const {
     expenses,
@@ -275,6 +291,7 @@ export default function App() {
         {tab === 'dashboard' && (
           <Dashboard 
             investments={investments}
+            incomes={incomes}
             expenses={expenses}
           />
         )}

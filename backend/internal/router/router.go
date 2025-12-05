@@ -37,6 +37,10 @@ func RegisterRoutes(store storage.Storage) *mux.Router {
 	api.HandleFunc("/investments", h.InvestmentsHandler).Methods("GET", "POST")
 	api.HandleFunc("/investments/{id}", h.InvestmentHandler).Methods("GET", "PUT", "DELETE")
 
+	// Income routes
+	api.HandleFunc("/incomes", h.IncomesHandler).Methods("GET", "POST")
+	api.HandleFunc("/incomes/{id}", h.IncomeHandler).Methods("GET", "PUT", "DELETE")
+
 	// Expense routes
 	api.HandleFunc("/expenses", h.ExpensesHandler).Methods("GET", "POST")
 	api.HandleFunc("/expenses/{id}", h.ExpenseHandler).Methods("GET", "PUT", "DELETE")

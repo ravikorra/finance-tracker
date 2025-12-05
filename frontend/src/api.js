@@ -104,6 +104,24 @@ export const api = {
     method: 'DELETE'
   }),
 
+  // ===== INCOMES =====
+  
+  getIncomes: () => request('/incomes'),
+
+  createIncome: (data) => request('/incomes', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
+  updateIncome: (id, data) => request(`/incomes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  }),
+
+  deleteIncome: (id) => request(`/incomes/${id}`, {
+    method: 'DELETE'
+  }),
+
   // ===== EXPENSES =====
   
   getExpenses: () => request('/expenses'),

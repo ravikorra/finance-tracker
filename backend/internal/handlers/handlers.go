@@ -252,6 +252,113 @@ func (h *Handler) DeleteExpense(w http.ResponseWriter, r *http.Request) {
 	middleware.SuccessMessage(w, "Expense deleted successfully")
 }
 
+// ----- INCOMES -----
+
+// GetIncomes handles GET /api/incomes
+func (h *Handler) GetIncomes(w http.ResponseWriter, r *http.Request) {
+	incomes := h.store.GetIncomes()
+	middleware.JSONResponse(w, incomes, http.StatusOK)
+}
+
+// CreateIncome handles POST /api/incomes
+func (h *Handler) CreateIncome(w http.ResponseWriter, r *http.Request) {
+	var inc models.Income
+	if err := json.NewDecoder(r.Body).Decode(&inc); err != nil {
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	inc.ID = uuid.New().String()
+	inc.CreatedAt = time.Now().Format(time.RFC3339)
+	inc.UpdatedAt = inc.CreatedAt
+
+	// Validate income
+	if err := inc.Validate(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Validation error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.AddIncome(inc); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to add income: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveIncomes(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save income: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	middleware.JSONResponse(w, inc, http.StatusCreated)
+}
+
+// UpdateIncome handles PUT /api/incomes/{id}
+func (h *Handler) UpdateIncome(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var updates models.Income
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	incomes := h.store.GetIncomes()
+	var original models.Income
+	found := false
+	for _, inc := range incomes {
+		if inc.ID == id {
+			original = inc
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		middleware.ErrorResponse(w, "Income not found", http.StatusNotFound)
+		return
+	}
+
+	updates.ID = id
+	updates.CreatedAt = original.CreatedAt
+	updates.UpdatedAt = time.Now().Format(time.RFC3339)
+
+	// Validate before updating
+	if err := updates.Validate(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Validation error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.store.UpdateIncome(id, updates); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to update income: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.store.SaveIncomes(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save income: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	middleware.JSONResponse(w, updates, http.StatusOK)
+}
+
+// DeleteIncome handles DELETE /api/incomes/{id}
+func (h *Handler) DeleteIncome(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	if err := h.store.DeleteIncome(id); err != nil {
+		middleware.ErrorResponse(w, "Income not found", http.StatusNotFound)
+		return
+	}
+
+	if err := h.store.SaveIncomes(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save income: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	middleware.SuccessMessage(w, "Income deleted successfully")
+}
+
 // ----- SETTINGS -----
 
 // GetSettings handles GET /api/settings
@@ -343,6 +450,30 @@ func (h *Handler) InvestmentHandler(w http.ResponseWriter, r *http.Request) {
 		h.UpdateInvestment(w, r)
 	case "DELETE":
 		h.DeleteInvestment(w, r)
+	default:
+		middleware.ErrorResponse(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// IncomesHandler routes income requests
+func (h *Handler) IncomesHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		h.GetIncomes(w, r)
+	case "POST":
+		h.CreateIncome(w, r)
+	default:
+		middleware.ErrorResponse(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// IncomeHandler routes single income requests
+func (h *Handler) IncomeHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "PUT":
+		h.UpdateIncome(w, r)
+	case "DELETE":
+		h.DeleteIncome(w, r)
 	default:
 		middleware.ErrorResponse(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}

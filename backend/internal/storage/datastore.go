@@ -16,6 +16,7 @@ type DataStore struct {
 	mu          sync.RWMutex
 	dataDir     string
 	investments []models.Investment
+	incomes     []models.Income
 	expenses    []models.Expense
 	settings    models.Settings
 }
@@ -25,9 +26,10 @@ func NewDataStore(dataDir string) *DataStore {
 	ds := &DataStore{
 		dataDir: dataDir,
 		settings: models.Settings{
-			Categories:      []string{"Food", "Transport", "Utilities", "Shopping", "Entertainment", "Health", "EMI", "Other"},
-			InvestmentTypes: []string{"Mutual Fund", "Stocks", "FD", "Gold", "PPF", "NPS", "Other"},
-			Members:         []string{"Ravi", "Family"},
+			Categories:       []string{"Food", "Transport", "Utilities", "Shopping", "Entertainment", "Health", "EMI", "Other"},
+			InvestmentTypes:  []string{"Mutual Fund", "Stocks", "FD", "Gold", "PPF", "NPS", "Other"},
+			IncomeCategories: []string{"Salary", "Business", "Rental", "Freelance", "Interest", "Dividend", "Other"},
+			Members:          []string{"Ravi", "Family"},
 		},
 	}
 	ds.load()
@@ -48,6 +50,16 @@ func (ds *DataStore) load() {
 		}
 	} else if !os.IsNotExist(err) {
 		log.Printf("Warning: Error reading investments file: %v", err)
+	}
+
+	// Load incomes
+	if data, err := os.ReadFile(filepath.Join(ds.dataDir, "incomes.json")); err == nil {
+		if err := json.Unmarshal(data, &ds.incomes); err != nil {
+			log.Printf("Warning: Failed to load incomes: %v", err)
+			ds.incomes = []models.Income{}
+		}
+	} else if !os.IsNotExist(err) {
+		log.Printf("Warning: Error reading incomes file: %v", err)
 	}
 
 	// Load expenses
@@ -96,6 +108,21 @@ func (ds *DataStore) SaveExpenses() error {
 	filePath := filepath.Join(ds.dataDir, "expenses.json")
 	if err := os.WriteFile(filePath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write expenses file: %w", err)
+	}
+	return nil
+}
+
+// SaveIncomes writes incomes to file
+func (ds *DataStore) SaveIncomes() error {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+	data, err := json.MarshalIndent(ds.incomes, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal incomes: %w", err)
+	}
+	filePath := filepath.Join(ds.dataDir, "incomes.json")
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write incomes file: %w", err)
 	}
 	return nil
 }
@@ -160,6 +187,53 @@ func (ds *DataStore) DeleteInvestment(id string) error {
 		}
 	}
 	return fmt.Errorf("investment not found")
+}
+
+// GetIncomes returns all incomes
+func (ds *DataStore) GetIncomes() []models.Income {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+	return ds.incomes
+}
+
+// AddIncome adds a new income
+func (ds *DataStore) AddIncome(inc models.Income) error {
+	if err := inc.Validate(); err != nil {
+		return fmt.Errorf("invalid income: %w", err)
+	}
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	ds.incomes = append(ds.incomes, inc)
+	return nil
+}
+
+// UpdateIncome updates an existing income
+func (ds *DataStore) UpdateIncome(id string, updated models.Income) error {
+	if err := updated.Validate(); err != nil {
+		return fmt.Errorf("invalid income: %w", err)
+	}
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	for i, inc := range ds.incomes {
+		if inc.ID == id {
+			ds.incomes[i] = updated
+			return nil
+		}
+	}
+	return fmt.Errorf("income not found")
+}
+
+// DeleteIncome removes an income
+func (ds *DataStore) DeleteIncome(id string) error {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+	for i, inc := range ds.incomes {
+		if inc.ID == id {
+			ds.incomes = append(ds.incomes[:i], ds.incomes[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("income not found")
 }
 
 // GetExpenses returns all expenses
@@ -230,6 +304,7 @@ func (ds *DataStore) GetExportData() models.ExportData {
 	defer ds.mu.RUnlock()
 	return models.ExportData{
 		Investments: ds.investments,
+		Incomes:     ds.incomes,
 		Expenses:    ds.expenses,
 		Settings:    ds.settings,
 	}
@@ -241,6 +316,9 @@ func (ds *DataStore) ImportData(data models.ExportData) error {
 	defer ds.mu.Unlock()
 	if len(data.Investments) > 0 {
 		ds.investments = data.Investments
+	}
+	if len(data.Incomes) > 0 {
+		ds.incomes = data.Incomes
 	}
 	if len(data.Expenses) > 0 {
 		ds.expenses = data.Expenses

@@ -12,6 +12,18 @@ type Investment struct {
 	UpdatedAt string  `json:"updatedAt"` // When record was last updated
 }
 
+// Income represents one income entry
+type Income struct {
+	ID        string  `json:"id"`
+	Source    string  `json:"source"`   // e.g., "Salary", "Rent", "Freelance"
+	Amount    float64 `json:"amount"`   // How much received
+	Category  string  `json:"category"` // e.g., "Salary", "Business", "Rental"
+	Date      string  `json:"date"`     // When received
+	AddedBy   string  `json:"addedBy"`  // Who added this
+	CreatedAt string  `json:"createdAt"`
+	UpdatedAt string  `json:"updatedAt"`
+}
+
 // Expense represents one expense entry
 type Expense struct {
 	ID        string  `json:"id"`
@@ -26,9 +38,10 @@ type Expense struct {
 
 // Settings stores app configuration
 type Settings struct {
-	Categories      []string `json:"categories"`      // Expense categories
-	InvestmentTypes []string `json:"investmentTypes"` // Types of investments
-	Members         []string `json:"members"`         // Family members
+	Categories       []string `json:"categories"`       // Expense categories
+	InvestmentTypes  []string `json:"investmentTypes"`  // Types of investments
+	IncomeCategories []string `json:"incomeCategories"` // Income categories
+	Members          []string `json:"members"`          // Family members
 }
 
 // ExportData is the format for backup/restore
@@ -36,6 +49,7 @@ type ExportData struct {
 	Version     string       `json:"version"`
 	ExportedAt  string       `json:"exportedAt"`
 	Investments []Investment `json:"investments"`
+	Incomes     []Income     `json:"incomes"`
 	Expenses    []Expense    `json:"expenses"`
 	Settings    Settings     `json:"settings"`
 }
