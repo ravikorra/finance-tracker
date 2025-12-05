@@ -514,3 +514,43 @@ func (h *Handler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		middleware.ErrorResponse(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
+
+// RefreshNAV handles POST /api/investments/refresh-nav
+// This endpoint will be called from frontend to update all mutual fund NAVs
+func (h *Handler) RefreshNAV(w http.ResponseWriter, r *http.Request) {
+	// Frontend will handle the NAV fetching and send updated investments
+	// This is a placeholder for future server-side NAV refresh if needed
+
+	var updates []models.Investment
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		middleware.ErrorResponse(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Update each investment
+	updatedCount := 0
+	for _, inv := range updates {
+		if inv.ID == "" {
+			continue
+		}
+
+		inv.UpdatedAt = time.Now().Format(time.RFC3339)
+		if err := h.store.UpdateInvestment(inv.ID, inv); err != nil {
+			// Log error but continue with other investments
+			continue
+		}
+		updatedCount++
+	}
+
+	if err := h.store.SaveInvestments(); err != nil {
+		middleware.ErrorResponse(w, fmt.Sprintf("Failed to save investments: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"message": "NAV refresh completed",
+		"updated": updatedCount,
+		"total":   len(updates),
+	}
+	middleware.JSONResponse(w, response, http.StatusOK)
+}

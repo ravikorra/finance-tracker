@@ -2,14 +2,16 @@ package models
 
 // Investment represents one investment entry
 type Investment struct {
-	ID        string  `json:"id"`        // Unique identifier
-	Name      string  `json:"name"`      // e.g., "HDFC Flexi Cap"
-	Type      string  `json:"type"`      // e.g., "Mutual Fund"
-	Invested  float64 `json:"invested"`  // Amount invested
-	Current   float64 `json:"current"`   // Current value
-	Date      string  `json:"date"`      // Purchase date
-	CreatedAt string  `json:"createdAt"` // When record was created
-	UpdatedAt string  `json:"updatedAt"` // When record was last updated
+	ID         string  `json:"id"`         // Unique identifier
+	Name       string  `json:"name"`       // e.g., "HDFC Flexi Cap"
+	Type       string  `json:"type"`       // e.g., "Mutual Fund"
+	Invested   float64 `json:"invested"`   // Amount invested
+	Current    float64 `json:"current"`    // Current value
+	Date       string  `json:"date"`       // Purchase date
+	SchemeCode string  `json:"schemeCode"` // MF API scheme code for NAV updates
+	Units      float64 `json:"units"`      // Number of units purchased
+	CreatedAt  string  `json:"createdAt"`  // When record was created
+	UpdatedAt  string  `json:"updatedAt"`  // When record was last updated
 }
 
 // Income represents one income entry
