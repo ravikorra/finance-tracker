@@ -4,10 +4,13 @@ import { Navigation } from './components/Layout/Navigation';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { ErrorMessage } from './components/common/ErrorMessage';
+import AutocompleteInput from './components/common/AutocompleteInput';
 import { useInvestments } from './hooks/useInvestments';
+import { useIncomes } from './hooks/useIncomes';
 import { useExpenses } from './hooks/useExpenses';
 import { useSettings } from './hooks/useSettings';
 import { formatCurrency, getTodayDate } from './utils/formatters';
+import { searchMutualFunds, getNAVOnDate, calculateUnits, refreshInvestmentNAV } from './utils/mfApi';
 import { api } from './api';
 import './App.css';
 
@@ -29,12 +32,17 @@ export default function App() {
 
   // Form data for investments
   const [invForm, setInvForm] = useState({
-    name: '', type: 'Mutual Fund', invested: '', current: '', date: today()
+    name: '', type: 'Mutual Fund', invested: '', current: '', date: today(), schemeCode: '', units: 0, currentNAV: ''
   });
   
   // Form data for expenses
   const [expForm, setExpForm] = useState({
     desc: '', amount: '', category: 'Food', date: today(), addedBy: 'Ravi'
+  });
+
+  // Form data for incomes
+  const [incForm, setIncForm] = useState({
+    source: '', amount: '', category: 'Salary', date: today(), addedBy: 'Ravi'
   });
 
   // Custom hooks for data management
@@ -47,6 +55,16 @@ export default function App() {
     updateInvestment,
     deleteInvestment,
   } = useInvestments();
+
+  const {
+    incomes,
+    loading: incomesLoading,
+    error: incomesError,
+    refreshIncomes,
+    addIncome,
+    updateIncome,
+    deleteIncome,
+  } = useIncomes();
 
   const {
     expenses,
@@ -97,18 +115,77 @@ export default function App() {
 
   // ----- INVESTMENT FUNCTIONS -----
 
+  // Refresh NAV for all mutual fund investments
+  const handleRefreshNAV = async () => {
+    const mutualFunds = invArray.filter(inv => inv.type === 'Mutual Fund' && inv.schemeCode);
+    
+    if (mutualFunds.length === 0) {
+      alert('No mutual funds with scheme codes found to refresh');
+      return;
+    }
+
+    const confirmed = confirm(`Refresh NAV for ${mutualFunds.length} mutual fund(s)?`);
+    if (!confirmed) return;
+
+    try {
+      // Show loading state
+      const updatedInvestments = [];
+      
+      for (const inv of mutualFunds) {
+        const updated = await refreshInvestmentNAV(inv);
+        updatedInvestments.push(updated);
+      }
+
+      // Send to backend
+      await api.refreshNAV(updatedInvestments);
+      
+      // Reload investments
+      await fetchInvestments();
+      
+      alert(`Successfully refreshed NAV for ${updatedInvestments.length} investment(s)`);
+    } catch (err) {
+      alert('Error refreshing NAV: ' + err.message);
+    }
+  };
+
   // Save new or update existing investment
   const saveInvestment = async () => {
     // Validate: name and invested amount required
     if (!invForm.name || !invForm.invested) return;
     
     try {
+      let units = parseFloat(invForm.units) || 0;
+      let current = parseFloat(invForm.current) || parseFloat(invForm.invested);
+
+      /* Auto NAV fetch commented out - using manual entry
+      // If this is a mutual fund with scheme code, calculate units and current value
+      if (invForm.type === 'Mutual Fund' && invForm.schemeCode && invForm.invested && invForm.date) {
+        const purchaseNAV = await getNAVOnDate(invForm.schemeCode, invForm.date);
+        if (purchaseNAV) {
+          units = calculateUnits(parseFloat(invForm.invested), purchaseNAV);
+          
+          // If no current value entered, calculate it from current NAV
+          if (!invForm.current) {
+            const investmentData = await refreshInvestmentNAV({
+              schemeCode: invForm.schemeCode,
+              invested: parseFloat(invForm.invested),
+              date: invForm.date,
+              units: units
+            });
+            current = investmentData.current || current;
+          }
+        }
+      }
+      */
+
       const data = {
         name: invForm.name,
         type: invForm.type,
         invested: parseFloat(invForm.invested),
-        current: parseFloat(invForm.current) || parseFloat(invForm.invested),
-        date: invForm.date
+        current: current,
+        date: invForm.date,
+        schemeCode: invForm.schemeCode || '',
+        units: units
       };
       
       if (editingItem) {
@@ -120,25 +197,29 @@ export default function App() {
       }
       resetInvForm();
     } catch (err) {
-      alert('Error saving investment');
+      alert('Error saving investment: ' + err.message);
     }
   };
 
   // Clear investment form and close it
   const resetInvForm = () => {
-    setInvForm({ name: '', type: 'Mutual Fund', invested: '', current: '', date: today() });
+    setInvForm({ name: '', type: 'Mutual Fund', invested: '', current: '', date: today(), schemeCode: '', units: 0, currentNAV: '' });
     setEditingItem(null);
     setShowForm(null);
   };
 
   // Open form with existing data for editing
   const editInv = (inv) => {
+    const currentNAV = inv.units > 0 ? (inv.current / inv.units).toFixed(2) : '';
     setInvForm({
       name: inv.name,
       type: inv.type,
       invested: String(inv.invested),
       current: String(inv.current),
-      date: inv.date
+      date: inv.date,
+      schemeCode: inv.schemeCode || '',
+      units: inv.units || 0,
+      currentNAV: currentNAV
     });
     setEditingItem(inv.id);
     setShowForm('investment');
@@ -275,6 +356,7 @@ export default function App() {
         {tab === 'dashboard' && (
           <Dashboard 
             investments={investments}
+            incomes={incomes}
             expenses={expenses}
           />
         )}
@@ -285,14 +367,32 @@ export default function App() {
             <button className="add-btn" onClick={() => setShowForm('investment')}>
               + Add Investment
             </button>
+            
+            {/* Refresh NAV feature commented out - using manual entry instead
+            <button 
+              className="primary" 
+              onClick={handleRefreshNAV}
+              style={{ 
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                padding: '0.625rem 1.25rem',
+                fontSize: '0.875rem'
+              }}
+            >
+              🔄 Refresh NAV
+            </button>
+            */}
 
             {/* Investment Form */}
             {showForm === 'investment' && (
               <div className="form card">
-                <input
-                  placeholder="Name (e.g., HDFC Flexi Cap)"
+                <AutocompleteInput
                   value={invForm.name}
-                  onChange={e => setInvForm({...invForm, name: e.target.value})}
+                  onChange={e => setInvForm({...invForm, name: e.target.value, schemeCode: ''})}
+                  onSelect={(fund) => setInvForm({...invForm, name: fund.schemeName, schemeCode: fund.schemeCode})}
+                  placeholder="Search mutual fund (e.g., HDFC Flexi Cap)"
+                  searchFunction={searchMutualFunds}
+                  displayKey="schemeName"
+                  minChars={3}
                 />
                 <div className="grid-2">
                   <select
@@ -319,6 +419,36 @@ export default function App() {
                     onChange={e => setInvForm({...invForm, current: e.target.value})}
                   />
                 </div>
+                
+                {/* Manual NAV and Units Entry for Mutual Funds */}
+                {invForm.type === 'Mutual Fund' && (
+                  <div className="grid-2" style={{ marginTop: '1rem' }}>
+                    <input
+                      type="number"
+                      step="0.001"
+                      placeholder="Units (e.g., 425.41)"
+                      value={invForm.units || ''}
+                      onChange={e => setInvForm({...invForm, units: e.target.value})}
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Current NAV ₹ (optional)"
+                      value={invForm.currentNAV || ''}
+                      onChange={e => {
+                        const nav = e.target.value;
+                        const units = invForm.units;
+                        setInvForm({
+                          ...invForm, 
+                          currentNAV: nav,
+                          // Auto-calculate current value if both NAV and units are provided
+                          current: (nav && units) ? (parseFloat(nav) * parseFloat(units)).toFixed(2) : invForm.current
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+                
                 <div className="btn-row">
                   <button className="primary" onClick={saveInvestment}>
                     {editingItem ? 'Update' : 'Save'}
@@ -330,28 +460,60 @@ export default function App() {
 
             {/* Investment List */}
             <div className="items-grid">
-              {invArray.map(inv => (
-                <div key={inv.id} className="card item">
-                  <div className="item-header">
-                    <div>
-                      <h4>{inv.name}</h4>
-                      <small>{inv.type} • {inv.date}</small>
+              {invArray.map(inv => {
+                const currentNAV = inv.units && inv.units > 0 ? (inv.current / inv.units) : null;
+                const purchaseNAV = inv.units && inv.units > 0 ? (inv.invested / inv.units) : null;
+                
+                // Debug logging
+                console.log('Investment:', inv.name, 'Units:', inv.units, 'SchemeCode:', inv.schemeCode);
+                
+                return (
+                  <div key={inv.id} className="card item">
+                    <div className="item-header">
+                      <div>
+                        <h4>{inv.name}</h4>
+                        <small>{inv.type} • {inv.date}</small>
+                        {inv.schemeCode && <small style={{display: 'block', color: '#667eea'}}> Scheme: {inv.schemeCode}</small>}
+                      </div>
+                      <div className="item-actions">
+                        <button onClick={() => editInv(inv)}>Edit</button>
+                        <button className="danger" onClick={() => deleteInv(inv.id)}>Del</button>
+                      </div>
                     </div>
-                    <div className="item-actions">
-                      <button onClick={() => editInv(inv)}>Edit</button>
-                      <button className="danger" onClick={() => deleteInv(inv.id)}>Del</button>
+                    
+                    {/* NAV and Units Information */}
+                    {inv.type === 'Mutual Fund' && inv.units && inv.units > 0 && (
+                      <div className="nav-info">
+                        <div className="nav-item">
+                          <span className="nav-label">Units:</span>
+                          <span className="nav-value">{inv.units.toFixed(3)}</span>
+                        </div>
+                        {purchaseNAV && (
+                          <div className="nav-item">
+                            <span className="nav-label">Purchase NAV:</span>
+                            <span className="nav-value">{fmt(purchaseNAV)}</span>
+                          </div>
+                        )}
+                        {currentNAV && (
+                          <div className="nav-item">
+                            <span className="nav-label">Current NAV:</span>
+                            <span className="nav-value">{fmt(currentNAV)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="item-footer">
+                      <span>{fmt(inv.invested)} → {fmt(inv.current)}</span>
+                      <span className={inv.current >= inv.invested ? 'gain' : 'loss'}>
+                        {inv.current >= inv.invested ? '+' : ''}
+                        {fmt(inv.current - inv.invested)} (
+                        {((inv.current - inv.invested) / inv.invested * 100).toFixed(1)}%)
+                      </span>
                     </div>
                   </div>
-                  <div className="item-footer">
-                    <span>{fmt(inv.invested)} → {fmt(inv.current)}</span>
-                    <span className={inv.current >= inv.invested ? 'gain' : 'loss'}>
-                      {inv.current >= inv.invested ? '+' : ''}
-                      {fmt(inv.current - inv.invested)} (
-                      {((inv.current - inv.invested) / inv.invested * 100).toFixed(1)}%)
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

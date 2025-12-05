@@ -1,0 +1,292 @@
+/* ============================================
+   ANALYTICS VIEW - Light Theme
+   ============================================ */
+
+.analytics-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* ============================================
+   ANALYTICS SUMMARY METRICS
+   ============================================ */
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.summary-metric {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.08);
+}
+
+.summary-metric:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.25);
+}
+
+.metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.metric-icon.net-worth {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+}
+
+.metric-icon.invested {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.metric-icon.monthly {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 0.6875rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-change {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.metric-change.positive {
+  color: #10b981;
+}
+
+.metric-change.negative {
+  color: #ef4444;
+}
+
+/* ============================================
+   CHARTS CONTAINER
+   ============================================ */
+
+.charts-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chart-box {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.08);
+}
+
+.chart-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.25);
+}
+
+.chart-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.chart-box > div:last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Empty State */
+.chart-box.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  opacity: 0.4;
+  padding: 2rem;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* Custom Tooltip - Light Theme */
+.chart-tooltip {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.chart-tooltip .label {
+  color: #6b7280;
+  font-size: 0.8125rem;
+  margin: 0 0 0.25rem 0;
+  font-weight: 600;
+}
+
+.chart-tooltip .value {
+  color: #1a1a1a;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (min-width: 1400px) {
+  .analytics-view {
+    gap: 2rem;
+  }
+
+  .analytics-summary {
+    gap: 2rem;
+  }
+
+  .charts-container {
+    gap: 2rem;
+  }
+
+  .metric-value {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .charts-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chart-box:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 992px) {
+  .analytics-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-metric {
+    padding: 1.25rem;
+  }
+
+  .metric-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 1.5rem;
+  }
+
+  .metric-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-view {
+    gap: 1.25rem;
+    height: auto;
+    overflow: auto;
+  }
+
+  .analytics-summary {
+    gap: 1rem;
+  }
+
+  .summary-metric {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .metric-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+  }
+
+  .metric-value {
+    font-size: 1.125rem;
+  }
+
+  .metric-label {
+    font-size: 0.7rem;
+  }
+
+  .charts-container {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .chart-box {
+    min-height: 300px;
+  }
+
+  .chart-title {
+    font-size: 0.8125rem;
+  }
+}

@@ -104,6 +104,31 @@ export const api = {
     method: 'DELETE'
   }),
 
+  // Refresh NAV for investments
+  // Usage: await api.refreshNAV([...updatedInvestments]);
+  refreshNAV: (investments) => request('/investments/refresh-nav', {
+    method: 'POST',
+    body: JSON.stringify(investments)
+  }),
+
+  // ===== INCOMES =====
+  
+  getIncomes: () => request('/incomes'),
+
+  createIncome: (data) => request('/incomes', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
+  updateIncome: (id, data) => request(`/incomes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  }),
+
+  deleteIncome: (id) => request(`/incomes/${id}`, {
+    method: 'DELETE'
+  }),
+
   // ===== EXPENSES =====
   
   getExpenses: () => request('/expenses'),

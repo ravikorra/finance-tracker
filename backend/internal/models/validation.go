@@ -41,3 +41,23 @@ func (exp *Expense) Validate() error {
 	}
 	return nil
 }
+
+// Validate checks if an Income is valid
+func (inc *Income) Validate() error {
+	if inc.Source == "" {
+		return errors.New("income source is required")
+	}
+	if inc.Amount <= 0 {
+		return errors.New("income amount must be greater than 0")
+	}
+	if inc.Category == "" {
+		return errors.New("income category is required")
+	}
+	if inc.Date == "" {
+		return errors.New("income date is required")
+	}
+	if inc.AddedBy == "" {
+		return errors.New("added by (member name) is required")
+	}
+	return nil
+}

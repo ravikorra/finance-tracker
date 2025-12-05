@@ -12,6 +12,13 @@ type Storage interface {
 	DeleteInvestment(id string) error
 	SaveInvestments() error
 
+	// Incomes
+	GetIncomes() []models.Income
+	AddIncome(inc models.Income) error
+	UpdateIncome(id string, updated models.Income) error
+	DeleteIncome(id string) error
+	SaveIncomes() error
+
 	// Expenses
 	GetExpenses() []models.Expense
 	AddExpense(exp models.Expense) error
