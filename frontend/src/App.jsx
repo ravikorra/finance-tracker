@@ -36,6 +36,12 @@ export default function App() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   };
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthString());
+  
+  // Expense grouping: 'category' or 'user'
+  const [expenseGroupBy, setExpenseGroupBy] = useState('category');
+  
+  // Investment grouping: 'type' or 'user'
+  const [investmentGroupBy, setInvestmentGroupBy] = useState('type');
 
   // Form data for investments
   const [invForm, setInvForm] = useState({
@@ -427,15 +433,51 @@ export default function App() {
         {/* ===== INVESTMENTS TAB ===== */}
         {tab === 'investments' && (
           <div className="list-view">
-            {/* Month Filter */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-              <label style={{ fontWeight: 500, color: '#667eea' }}>Filter by Month:</label>
-              <input 
-                type="month" 
-                value={selectedMonth} 
-                onChange={e => setSelectedMonth(e.target.value)}
-                style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(102, 126, 234, 0.3)', borderRadius: '0.375rem', cursor: 'pointer' }}
-              />
+            {/* Month Filter and Grouping Toggle */}
+            <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <label style={{ fontWeight: 500, color: '#667eea' }}>Filter by Month:</label>
+                <input 
+                  type="month" 
+                  value={selectedMonth} 
+                  onChange={e => setSelectedMonth(e.target.value)}
+                  style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(102, 126, 234, 0.3)', borderRadius: '0.375rem', cursor: 'pointer' }}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <label style={{ fontWeight: 500, color: '#667eea' }}>Group By:</label>
+                <button 
+                  onClick={() => setInvestmentGroupBy('type')}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    border: `2px solid ${investmentGroupBy === 'type' ? '#667eea' : 'rgba(102, 126, 234, 0.3)'}`,
+                    background: investmentGroupBy === 'type' ? 'rgba(102, 126, 234, 0.1)' : 'transparent',
+                    borderRadius: '0.375rem',
+                    cursor: 'pointer',
+                    color: '#667eea',
+                    fontWeight: investmentGroupBy === 'type' ? 600 : 500,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Type
+                </button>
+                <button 
+                  onClick={() => setInvestmentGroupBy('user')}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    border: `2px solid ${investmentGroupBy === 'user' ? '#667eea' : 'rgba(102, 126, 234, 0.3)'}`,
+                    background: investmentGroupBy === 'user' ? 'rgba(102, 126, 234, 0.1)' : 'transparent',
+                    borderRadius: '0.375rem',
+                    cursor: 'pointer',
+                    color: '#667eea',
+                    fontWeight: investmentGroupBy === 'user' ? 600 : 500,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  User
+                </button>
+              </div>
             </div>
 
             <button className="add-btn" onClick={() => setShowForm('investment')}>
@@ -539,64 +581,110 @@ export default function App() {
               </div>
             )}
 
-            {/* Investment List */}
-            <div className="items-grid">
-              {invArray
-                .filter(inv => inv.date?.startsWith(selectedMonth))
-                .map(inv => {
-                const currentNAV = inv.units && inv.units > 0 ? (inv.current / inv.units) : null;
-                const purchaseNAV = inv.units && inv.units > 0 ? (inv.invested / inv.units) : null;
+            {/* Investment List - Grouped by Type or User */}
+            <div className="grouped-investments">
+              {(() => {
+                // Filter investments by selected month
+                const monthlyInvestments = invArray.filter(inv => inv.date?.startsWith(selectedMonth));
                 
-                // Debug logging
-                console.log('Investment:', inv.name, 'Units:', inv.units, 'SchemeCode:', inv.schemeCode);
+                // Group investments by type or user
+                const grouped = {};
+                const groupKey = investmentGroupBy === 'user' ? 'addedBy' : 'type';
                 
-                return (
-                  <div key={inv.id} className="card item">
-                    <div className="item-header">
-                      <div>
-                        <h4>{inv.name}</h4>
-                        <small>{inv.type} • {inv.date}</small>
-                        {inv.schemeCode && <small style={{display: 'block', color: '#667eea'}}> Scheme: {inv.schemeCode}</small>}
-                      </div>
-                      <div className="item-actions">
-                        <button onClick={() => editInv(inv)}>Edit</button>
-                        <button className="danger" onClick={() => deleteInv(inv.id)}>Del</button>
-                      </div>
-                    </div>
-                    
-                    {/* NAV and Units Information */}
-                    {inv.type === 'Mutual Fund' && inv.units && inv.units > 0 && (
-                      <div className="nav-info">
-                        <div className="nav-item">
-                          <span className="nav-label">Units:</span>
-                          <span className="nav-value">{inv.units.toFixed(3)}</span>
+                monthlyInvestments.forEach(inv => {
+                  const key = inv[groupKey];
+                  if (!grouped[key]) {
+                    grouped[key] = [];
+                  }
+                  grouped[key].push(inv);
+                });
+                
+                // Sort groups by total current value (descending)
+                const sortedGroups = Object.keys(grouped).sort((a, b) => {
+                  const totalA = grouped[a].reduce((sum, inv) => sum + (inv.current || 0), 0);
+                  const totalB = grouped[b].reduce((sum, inv) => sum + (inv.current || 0), 0);
+                  return totalB - totalA;
+                });
+                
+                // Render each group
+                return sortedGroups.map(groupName => {
+                  const investments = grouped[groupName];
+                  const groupTotal = investments.reduce((sum, inv) => sum + (inv.current || 0), 0);
+                  const groupInvested = investments.reduce((sum, inv) => sum + (inv.invested || 0), 0);
+                  const groupGain = groupTotal - groupInvested;
+                  
+                  return (
+                    <div key={groupName}>
+                      <div className={investmentGroupBy === 'user' ? 'investment-user-header' : 'investment-type-header'}>
+                        <div>
+                          <span className={investmentGroupBy === 'user' ? 'investment-user-name' : 'investment-type-name'}>
+                            {investmentGroupBy === 'user' ? '👤' : '💼'} {groupName}
+                          </span>
+                          <small>
+                            {fmt(groupInvested)} → {fmt(groupTotal)} 
+                            <span className={groupGain >= 0 ? 'gain' : 'loss'} style={{ marginLeft: '0.5rem' }}>
+                              {groupGain >= 0 ? '+' : ''}{fmt(groupGain)} ({((groupGain / groupInvested) * 100).toFixed(1)}%)
+                            </span>
+                          </small>
                         </div>
-                        {purchaseNAV && (
-                          <div className="nav-item">
-                            <span className="nav-label">Purchase NAV:</span>
-                            <span className="nav-value">{fmt(purchaseNAV)}</span>
-                          </div>
-                        )}
-                        {currentNAV && (
-                          <div className="nav-item">
-                            <span className="nav-label">Current NAV:</span>
-                            <span className="nav-value">{fmt(currentNAV)}</span>
-                          </div>
-                        )}
                       </div>
-                    )}
-                    
-                    <div className="item-footer">
-                      <span>{fmt(inv.invested)} → {fmt(inv.current)}</span>
-                      <span className={inv.current >= inv.invested ? 'gain' : 'loss'}>
-                        {inv.current >= inv.invested ? '+' : ''}
-                        {fmt(inv.current - inv.invested)} (
-                        {((inv.current - inv.invested) / inv.invested * 100).toFixed(1)}%)
-                      </span>
+                      <div className="investment-items-grid">
+                        {investments.map(inv => {
+                          const currentNAV = inv.units && inv.units > 0 ? (inv.current / inv.units) : null;
+                          const purchaseNAV = inv.units && inv.units > 0 ? (inv.invested / inv.units) : null;
+                          
+                          return (
+                            <div key={inv.id} className="card item">
+                              <div className="item-header">
+                                <div>
+                                  <h4>{inv.name}</h4>
+                                  <small>{inv.type} • {inv.date}</small>
+                                  {inv.schemeCode && <small style={{display: 'block', color: '#667eea'}}> Scheme: {inv.schemeCode}</small>}
+                                </div>
+                                <div className="item-actions">
+                                  <button onClick={() => editInv(inv)}>Edit</button>
+                                  <button className="danger" onClick={() => deleteInv(inv.id)}>Del</button>
+                                </div>
+                              </div>
+                              
+                              {/* NAV and Units Information */}
+                              {inv.type === 'Mutual Fund' && inv.units && inv.units > 0 && (
+                                <div className="nav-info">
+                                  <div className="nav-item">
+                                    <span className="nav-label">Units:</span>
+                                    <span className="nav-value">{inv.units.toFixed(3)}</span>
+                                  </div>
+                                  {purchaseNAV && (
+                                    <div className="nav-item">
+                                      <span className="nav-label">Purchase NAV:</span>
+                                      <span className="nav-value">{fmt(purchaseNAV)}</span>
+                                    </div>
+                                  )}
+                                  {currentNAV && (
+                                    <div className="nav-item">
+                                      <span className="nav-label">Current NAV:</span>
+                                      <span className="nav-value">{fmt(currentNAV)}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              <div className="item-footer">
+                                <span>{fmt(inv.invested)} → {fmt(inv.current)}</span>
+                                <span className={inv.current >= inv.invested ? 'gain' : 'loss'}>
+                                  {inv.current >= inv.invested ? '+' : ''}
+                                  {fmt(inv.current - inv.invested)} (
+                                  {((inv.current - inv.invested) / inv.invested * 100).toFixed(1)}%)
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </div>
         )}
@@ -700,15 +788,51 @@ export default function App() {
         {/* ===== EXPENSES TAB ===== */}
         {tab === 'expenses' && (
           <div className="list-view">
-            {/* Month Filter */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-              <label style={{ fontWeight: 500, color: '#667eea' }}>Filter by Month:</label>
-              <input 
-                type="month" 
-                value={selectedMonth} 
-                onChange={e => setSelectedMonth(e.target.value)}
-                style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(102, 126, 234, 0.3)', borderRadius: '0.375rem', cursor: 'pointer' }}
-              />
+            {/* Month Filter and Grouping Toggle */}
+            <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <label style={{ fontWeight: 500, color: '#667eea' }}>Filter by Month:</label>
+                <input 
+                  type="month" 
+                  value={selectedMonth} 
+                  onChange={e => setSelectedMonth(e.target.value)}
+                  style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(102, 126, 234, 0.3)', borderRadius: '0.375rem', cursor: 'pointer' }}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <label style={{ fontWeight: 500, color: '#667eea' }}>Group By:</label>
+                <button 
+                  onClick={() => setExpenseGroupBy('category')}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    border: `2px solid ${expenseGroupBy === 'category' ? '#667eea' : 'rgba(102, 126, 234, 0.3)'}`,
+                    background: expenseGroupBy === 'category' ? 'rgba(102, 126, 234, 0.1)' : 'transparent',
+                    borderRadius: '0.375rem',
+                    cursor: 'pointer',
+                    color: '#667eea',
+                    fontWeight: expenseGroupBy === 'category' ? 600 : 500,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Category
+                </button>
+                <button 
+                  onClick={() => setExpenseGroupBy('user')}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    border: `2px solid ${expenseGroupBy === 'user' ? '#667eea' : 'rgba(102, 126, 234, 0.3)'}`,
+                    background: expenseGroupBy === 'user' ? 'rgba(102, 126, 234, 0.1)' : 'transparent',
+                    borderRadius: '0.375rem',
+                    cursor: 'pointer',
+                    color: '#667eea',
+                    fontWeight: expenseGroupBy === 'user' ? 600 : 500,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  User
+                </button>
+              </div>
             </div>
 
             {/* Monthly Total */}
@@ -769,47 +893,55 @@ export default function App() {
               </div>
             )}
 
-            {/* Expense List - Grouped by Category */}
+            {/* Expense List - Grouped by Category or User */}
             <div className="grouped-expenses">
               {(() => {
                 // Filter expenses by selected month
                 const monthlyExpenses = expArray.filter(exp => exp.date?.startsWith(selectedMonth));
                 
-                // Group expenses by category
+                // Group expenses by category or user
                 const grouped = {};
+                const groupKey = expenseGroupBy === 'user' ? 'addedBy' : 'category';
+                
                 monthlyExpenses.forEach(exp => {
-                  if (!grouped[exp.category]) {
-                    grouped[exp.category] = [];
+                  const key = exp[groupKey];
+                  if (!grouped[key]) {
+                    grouped[key] = [];
                   }
-                  grouped[exp.category].push(exp);
+                  grouped[key].push(exp);
                 });
                 
-                // Sort categories by total amount (descending)
-                const sortedCategories = Object.keys(grouped).sort((a, b) => {
+                // Sort groups by total amount (descending)
+                const sortedGroups = Object.keys(grouped).sort((a, b) => {
                   const totalA = grouped[a].reduce((sum, exp) => sum + exp.amount, 0);
                   const totalB = grouped[b].reduce((sum, exp) => sum + exp.amount, 0);
                   return totalB - totalA;
                 });
                 
-                // Render each category group
-                return sortedCategories.map(category => {
-                  const expenses = grouped[category];
-                  const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                // Render each group
+                return sortedGroups.map(groupName => {
+                  const expenses = grouped[groupName];
+                  const groupTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
                   
                   return (
-                    <div key={category} className="expense-category-group">
-                      <div className="category-header">
-                        <span className="category-name">{category}</span>
-                        <span className="category-total">{fmt(categoryTotal)}</span>
+                    <div key={groupName} className={expenseGroupBy === 'user' ? 'expense-user-group' : 'expense-category-group'}>
+                      <div className={expenseGroupBy === 'user' ? 'user-header' : 'category-header'}>
+                        <span className={expenseGroupBy === 'user' ? 'user-name' : 'category-name'}>
+                          {expenseGroupBy === 'user' ? '👤' : '📍'} {groupName}
+                        </span>
+                        <span className={expenseGroupBy === 'user' ? 'user-total' : 'category-total'}>{fmt(groupTotal)}</span>
                       </div>
-                      <div className="category-items">
+                      <div className={expenseGroupBy === 'user' ? 'user-items' : 'category-items'}>
                         {expenses
                           .sort((a, b) => b.date?.localeCompare(a.date))
                           .map(exp => (
                             <div key={exp.id} className="expense-item">
                               <div className="expense-info">
                                 <h5>{exp.desc}</h5>
-                                <small>{exp.date} • {exp.paymentMethod || 'N/A'} • {exp.addedBy}</small>
+                                <small>
+                                  {exp.date} • {exp.category} • {exp.paymentMethod || 'N/A'}
+                                  {expenseGroupBy === 'category' && ` • ${exp.addedBy}`}
+                                </small>
                               </div>
                               <div className="expense-actions">
                                 <span className="amount">{fmt(exp.amount)}</span>
