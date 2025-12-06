@@ -30,7 +30,7 @@ func NewDataStore(dataDir string) *DataStore {
 			InvestmentTypes:  []string{"Mutual Fund", "Stocks", "FD", "Gold", "PPF", "NPS", "Chit", "Other"},
 			IncomeCategories: []string{"Salary", "Business", "Rental", "Freelance", "Interest", "Dividend", "Other"},
 			PaymentMethods:   []string{"Online", "Cash", "Card", "UPI", "Bank Transfer"},
-			Members:          []string{"Ravi", "Family"},
+			Members:          []string{"Ravi", "Akshata"},
 		},
 	}
 	ds.load()

@@ -769,26 +769,60 @@ export default function App() {
               </div>
             )}
 
-            {/* Expense List */}
-            <div className="items-grid">
-              {expArray
-                .filter(exp => exp.date?.startsWith(selectedMonth))
-                .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
-                .map(exp => (
-                  <div key={exp.id} className="card item">
-                    <div className="item-header">
-                      <div>
-                        <h4>{exp.desc}</h4>
-                        <small>{exp.date} • {exp.category} • {exp.paymentMethod || 'N/A'} • {exp.addedBy}</small>
+            {/* Expense List - Grouped by Category */}
+            <div className="grouped-expenses">
+              {(() => {
+                // Filter expenses by selected month
+                const monthlyExpenses = expArray.filter(exp => exp.date?.startsWith(selectedMonth));
+                
+                // Group expenses by category
+                const grouped = {};
+                monthlyExpenses.forEach(exp => {
+                  if (!grouped[exp.category]) {
+                    grouped[exp.category] = [];
+                  }
+                  grouped[exp.category].push(exp);
+                });
+                
+                // Sort categories by total amount (descending)
+                const sortedCategories = Object.keys(grouped).sort((a, b) => {
+                  const totalA = grouped[a].reduce((sum, exp) => sum + exp.amount, 0);
+                  const totalB = grouped[b].reduce((sum, exp) => sum + exp.amount, 0);
+                  return totalB - totalA;
+                });
+                
+                // Render each category group
+                return sortedCategories.map(category => {
+                  const expenses = grouped[category];
+                  const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                  
+                  return (
+                    <div key={category} className="expense-category-group">
+                      <div className="category-header">
+                        <span className="category-name">{category}</span>
+                        <span className="category-total">{fmt(categoryTotal)}</span>
                       </div>
-                      <div className="item-actions">
-                        <span className="amount">{fmt(exp.amount)}</span>
-                        <button onClick={() => editExp(exp)}>Edit</button>
-                        <button className="danger" onClick={() => deleteExp(exp.id)}>Del</button>
+                      <div className="category-items">
+                        {expenses
+                          .sort((a, b) => b.date?.localeCompare(a.date))
+                          .map(exp => (
+                            <div key={exp.id} className="expense-item">
+                              <div className="expense-info">
+                                <h5>{exp.desc}</h5>
+                                <small>{exp.date} • {exp.paymentMethod || 'N/A'} • {exp.addedBy}</small>
+                              </div>
+                              <div className="expense-actions">
+                                <span className="amount">{fmt(exp.amount)}</span>
+                                <button onClick={() => editExp(exp)}>Edit</button>
+                                <button className="danger" onClick={() => deleteExp(exp.id)}>Del</button>
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                });
+              })()}
             </div>
           </div>
         )}
