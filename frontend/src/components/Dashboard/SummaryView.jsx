@@ -10,14 +10,19 @@ import { getCurrentMonth } from '../../utils/formatters';
 import './SummaryView.css';
 
 export const SummaryView = ({ investments, incomes, expenses }) => {
-  const totalInvested = calculateTotalInvested(investments);
-  const totalCurrent = calculateTotalCurrent(investments);
-  const totalGain = calculateTotalGain(investments);
+  // Safe arrays for rendering
+  const invArray = Array.isArray(investments) ? investments : [];
+  const incArray = Array.isArray(incomes) ? incomes : [];
+  const expArray = Array.isArray(expenses) ? expenses : [];
+
+  const totalInvested = calculateTotalInvested(invArray);
+  const totalCurrent = calculateTotalCurrent(invArray);
+  const totalGain = calculateTotalGain(invArray);
   
   const currentMonth = getCurrentMonth();
-  const monthlyExpenses = expenses.filter(e => e.date?.startsWith(currentMonth));
-  const monthlyIncomes = incomes.filter(i => i.date?.startsWith(currentMonth));
-  const totalMonthlyExpense = calculateMonthlyExpenses(expenses);
+  const monthlyExpenses = expArray.filter(e => e.date?.startsWith(currentMonth));
+  const monthlyIncomes = incArray.filter(i => i.date?.startsWith(currentMonth));
+  const totalMonthlyExpense = calculateMonthlyExpenses(expArray);
   
   const byCategory = groupExpensesByCategory(monthlyExpenses);
 

@@ -185,7 +185,7 @@ export default function App() {
         invested: parseFloat(invForm.invested),
         current: current,
         date: invForm.date,
-        schemeCode: invForm.schemeCode || '',
+        schemeCode: String(invForm.schemeCode || ''),
         units: units
       };
       
@@ -363,6 +363,7 @@ export default function App() {
   // Safe arrays for rendering
   const invArray = Array.isArray(investments) ? investments : [];
   const expArray = Array.isArray(expenses) ? expenses : [];
+  const incArray = Array.isArray(incomes) ? incomes : [];
   
   // Current month expenses for Expenses tab
   const currentMonth = new Date().toISOString().slice(0, 7);
@@ -585,7 +586,7 @@ export default function App() {
             {/* Total Income Summary */}
             <div className="card center">
               <span className="label">Total Income</span>
-              <span className="value gain">{fmt(incomes.reduce((sum, inc) => sum + inc.amount, 0))}</span>
+              <span className="value gain">{fmt(incArray.reduce((sum, inc) => sum + inc.amount, 0))}</span>
             </div>
 
             <button className="add-btn" onClick={() => setShowForm('income')}>
@@ -642,7 +643,7 @@ export default function App() {
 
             {/* Income List */}
             <div className="items-grid">
-              {incomes
+              {incArray
                 .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
                 .map(inc => (
                   <div key={inc.id} className="card item">
