@@ -9,21 +9,32 @@ import {
 import { getCurrentMonth } from '../../utils/formatters';
 import './SummaryView.css';
 
-export const SummaryView = ({ investments, incomes, expenses }) => {
-  const totalInvested = calculateTotalInvested(investments);
-  const totalCurrent = calculateTotalCurrent(investments);
-  const totalGain = calculateTotalGain(investments);
+export const SummaryView = ({ investments, incomes, expenses, selectedMonth = null }) => {
+  // Safe arrays for rendering
+  const invArray = Array.isArray(investments) ? investments : [];
+  const incArray = Array.isArray(incomes) ? incomes : [];
+  const expArray = Array.isArray(expenses) ? expenses : [];
+
+  // Get current month if not selected
+  const currentMonth = selectedMonth || getCurrentMonth();
+
+  // Filter by selected month/year
+  const monthlyInvArray = invArray.filter(inv => inv.date?.startsWith(currentMonth));
+  const monthlyIncArray = incArray.filter(inc => inc.date?.startsWith(currentMonth));
+  const monthlyExpArray = expArray.filter(exp => exp.date?.startsWith(currentMonth));
+
+  const totalInvested = calculateTotalInvested(monthlyInvArray);
+  const totalCurrent = calculateTotalCurrent(monthlyInvArray);
+  const totalGain = calculateTotalGain(monthlyInvArray);
   
-  const currentMonth = getCurrentMonth();
-  const monthlyExpenses = expenses.filter(e => e.date?.startsWith(currentMonth));
-  const monthlyIncomes = incomes.filter(i => i.date?.startsWith(currentMonth));
-  const totalMonthlyExpense = calculateMonthlyExpenses(expenses);
+  const monthlyExpenses = monthlyExpArray;
+  const totalMonthlyExpense = calculateMonthlyExpenses(monthlyExpArray);
   
   const byCategory = groupExpensesByCategory(monthlyExpenses);
 
   // Calculate totals for the progress bar
-  // Income: Sum of all income entries for the current month
-  const totalIncome = monthlyIncomes.reduce((sum, inc) => sum + (inc.amount || 0), 0);
+  // Income: Sum of income entries for selected month
+  const totalIncome = monthlyIncArray.reduce((sum, inc) => sum + (inc.amount || 0), 0);
   
   const totalExpenses = totalMonthlyExpense;
   const totalSavings = totalGain >= 0 ? totalGain : 0;

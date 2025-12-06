@@ -1,0 +1,5 @@
+{"level":"INFO","time":"2025-12-02T14:04:36.046+0530","caller":"logger/logger.go:136","msg":"Configuration: Port=5000, DataDir=./data, LogLevel=info, LogDir=./logs"}
+{"level":"INFO","time":"2025-12-02T14:04:36.046+0530","caller":"logger/logger.go:136","msg":"Data store initialized at ./data"}
+{"level":"INFO","time":"2025-12-02T14:04:36.046+0530","caller":"logger/logger.go:136","msg":"Routes registered"}
+{"level":"INFO","time":"2025-12-02T14:04:36.047+0530","caller":"logger/logger.go:136","msg":"Starting server on port 5000"}
+{"level":"INFO","time":"2025-12-02T14:05:09.576+0530","caller":"logger/logger.go:136","msg":"Shutting down server gracefully..."}

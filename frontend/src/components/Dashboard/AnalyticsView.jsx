@@ -14,21 +14,33 @@ import './AnalyticsView.css';
 
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#f97316'];
 
-export const AnalyticsView = ({ investments, incomes, expenses }) => {
-  const totalInvested = calculateTotalInvested(investments);
-  const totalCurrent = calculateTotalCurrent(investments);
-  const totalGain = calculateTotalGain(investments);
+export const AnalyticsView = ({ investments, incomes, expenses, selectedMonth = null }) => {
+  // Safe arrays for rendering
+  const invArray = Array.isArray(investments) ? investments : [];
+  const incArray = Array.isArray(incomes) ? incomes : [];
+  const expArray = Array.isArray(expenses) ? expenses : [];
+
+  // Get current month if not selected
+  const currentMonth = selectedMonth || getCurrentMonth();
+
+  // Filter by selected month/year
+  const monthlyInvArray = invArray.filter(inv => inv.date?.startsWith(currentMonth));
+  const monthlyIncArray = incArray.filter(inc => inc.date?.startsWith(currentMonth));
+  const monthlyExpArray = expArray.filter(exp => exp.date?.startsWith(currentMonth));
+
+  const totalInvested = calculateTotalInvested(monthlyInvArray);
+  const totalCurrent = calculateTotalCurrent(monthlyInvArray);
+  const totalGain = calculateTotalGain(monthlyInvArray);
   
-  const currentMonth = getCurrentMonth();
-  const monthlyIncomes = incomes.filter(i => i.date?.startsWith(currentMonth));
-  const totalMonthlyIncome = monthlyIncomes.reduce((sum, inc) => sum + (inc.amount || 0), 0);
-  const gainPct = calculateGainPercentage(investments);
+  // Calculate total income for selected month
+  const totalMonthlyIncome = monthlyIncArray.reduce((sum, inc) => sum + (inc.amount || 0), 0);
+  const gainPct = calculateGainPercentage(monthlyInvArray);
   
-  const monthlyExpenses = expenses.filter(e => e.date?.startsWith(currentMonth));
-  const totalMonthly = calculateMonthlyExpenses(expenses);
+  const monthlyExpenses = monthlyExpArray;
+  const totalMonthly = calculateMonthlyExpenses(monthlyExpArray);
   
   const byCategory = groupExpensesByCategory(monthlyExpenses);
-  const byInvType = groupInvestmentsByType(investments);
+  const byInvType = groupInvestmentsByType(invArray);
 
   // Prepare data for Pie Chart (Expense Categories)
   const categoryChartData = Object.entries(byCategory).map(([name, value]) => ({
@@ -52,7 +64,7 @@ export const AnalyticsView = ({ investments, incomes, expenses }) => {
       const monthKey = date.toISOString().slice(0, 7);
       const monthName = date.toLocaleDateString('en-US', { month: 'short' });
       
-      const monthExpenses = expenses.filter(e => e.date?.startsWith(monthKey));
+      const monthExpenses = expArray.filter(e => e.date?.startsWith(monthKey));
       const total = monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
       
       trends.push({
