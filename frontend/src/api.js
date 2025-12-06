@@ -4,12 +4,16 @@
 // This file handles ALL communication with backend
 // When you make mobile app, just copy this file and change BASE_URL
 
-// Backend server address
+// Backend server address configuration
+// Priority: Environment Variable > Localhost (default)
+// 
 // For local development: localhost
-// For family access: change to your PC's IP (e.g., 192.168.1.100)
+// For family access on same WiFi: change to your PC's IP (e.g., 192.168.1.100)
 // For production: change to your server URL
-const BASE_URL = 'http://localhost:5000/v1/api';
-const HEALTH_URL = 'http://localhost:5000/health';
+//
+// You can set via environment: VITE_API_URL=http://192.168.1.100:5000/v1/api npm run dev
+let BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/v1/api';
+const HEALTH_URL = BASE_URL.replace('/v1/api', '') + '/health';
 
 // Check if backend is available
 async function checkBackendHealth() {
