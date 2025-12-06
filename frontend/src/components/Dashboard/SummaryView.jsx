@@ -21,13 +21,14 @@ export const SummaryView = ({ investments, incomes, expenses }) => {
   
   const currentMonth = getCurrentMonth();
   const monthlyExpenses = expArray.filter(e => e.date?.startsWith(currentMonth));
-  const monthlyIncomes = incArray.filter(i => i.date?.startsWith(currentMonth));
+  // Show ALL income on dashboard, not just current month
+  const monthlyIncomes = incArray;
   const totalMonthlyExpense = calculateMonthlyExpenses(expArray);
   
   const byCategory = groupExpensesByCategory(monthlyExpenses);
 
   // Calculate totals for the progress bar
-  // Income: Sum of all income entries for the current month
+  // Income: Sum of ALL income entries (not limited to current month)
   const totalIncome = monthlyIncomes.reduce((sum, inc) => sum + (inc.amount || 0), 0);
   
   const totalExpenses = totalMonthlyExpense;

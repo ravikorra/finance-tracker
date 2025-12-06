@@ -25,8 +25,8 @@ export const AnalyticsView = ({ investments, incomes, expenses }) => {
   const totalGain = calculateTotalGain(invArray);
   
   const currentMonth = getCurrentMonth();
-  const monthlyIncomes = incArray.filter(i => i.date?.startsWith(currentMonth));
-  const totalMonthlyIncome = monthlyIncomes.reduce((sum, inc) => sum + (inc.amount || 0), 0);
+  // Show ALL income, not just current month
+  const totalMonthlyIncome = incArray.reduce((sum, inc) => sum + (inc.amount || 0), 0);
   const gainPct = calculateGainPercentage(invArray);
   
   const monthlyExpenses = expArray.filter(e => e.date?.startsWith(currentMonth));
