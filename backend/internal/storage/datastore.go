@@ -26,9 +26,10 @@ func NewDataStore(dataDir string) *DataStore {
 	ds := &DataStore{
 		dataDir: dataDir,
 		settings: models.Settings{
-			Categories:       []string{"Food", "Transport", "Utilities", "Shopping", "Entertainment", "Health", "EMI", "Other"},
+			Categories:       []string{"Food", "Transport", "Utilities", "Shopping", "Entertainment", "Health", "EMI", "Household", "Other"},
 			InvestmentTypes:  []string{"Mutual Fund", "Stocks", "FD", "Gold", "PPF", "NPS", "Other"},
 			IncomeCategories: []string{"Salary", "Business", "Rental", "Freelance", "Interest", "Dividend", "Other"},
+			PaymentMethods:   []string{"Online", "Cash", "Card", "UPI", "Bank Transfer"},
 			Members:          []string{"Ravi", "Family"},
 		},
 	}

@@ -4,6 +4,7 @@ export const Navigation = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'investments', label: 'Investments' },
+    { id: 'income', label: 'Income' },
     { id: 'expenses', label: 'Expenses' },
   ];
 

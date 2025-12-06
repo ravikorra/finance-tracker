@@ -55,10 +55,12 @@ const AutocompleteInput = ({
     try {
       const results = await searchFunction(query);
       setSuggestions(results);
-      setShowDropdown(results.length > 0);
+      // Always show dropdown if query is long enough, even if no results
+      setShowDropdown(true);
     } catch (error) {
       console.error('Search error:', error);
       setSuggestions([]);
+      setShowDropdown(true); // Show dropdown to display manual entry option
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +86,16 @@ const AutocompleteInput = ({
     debounceTimer.current = setTimeout(() => {
       performSearch(newValue);
     }, debounceMs);
+  };
+
+  // Handle manual entry when no results found
+  const handleManualEntry = () => {
+    setShowDropdown(false);
+    setSuggestions([]);
+    // The inputValue is already set, just close dropdown
+    if (onSelect) {
+      onSelect({ schemeName: inputValue, schemeCode: '', isManual: true });
+    }
   };
 
   // Handle suggestion selection
@@ -156,26 +168,41 @@ const AutocompleteInput = ({
         )}
       </div>
 
-      {showDropdown && suggestions.length > 0 && (
+      {showDropdown && (
         <div className="autocomplete-dropdown">
-          {suggestions.map((suggestion, index) => {
-            const displayValue = typeof suggestion === 'object'
-              ? suggestion[displayKey]
-              : suggestion;
-            
-            return (
-              <div
-                key={suggestion.schemeCode || index}
-                className={`autocomplete-item ${
-                  index === selectedIndex ? 'selected' : ''
-                }`}
-                onClick={() => handleSelect(suggestion)}
-                onMouseEnter={() => setSelectedIndex(index)}
+          {suggestions.length > 0 ? (
+            <>
+              {suggestions.map((suggestion, index) => {
+                const displayValue = typeof suggestion === 'object'
+                  ? suggestion[displayKey]
+                  : suggestion;
+                
+                return (
+                  <div
+                    key={suggestion.schemeCode || index}
+                    className={`autocomplete-item ${
+                      index === selectedIndex ? 'selected' : ''
+                    }`}
+                    onClick={() => handleSelect(suggestion)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                  >
+                    {displayValue}
+                  </div>
+                );
+              })}
+            </>
+          ) : inputValue.length >= minChars && !isLoading ? (
+            <div className="autocomplete-no-results">
+              <div className="no-results-text">No mutual funds found</div>
+              <button 
+                className="manual-entry-btn"
+                onClick={handleManualEntry}
+                type="button"
               >
-                {displayValue}
-              </div>
-            );
-          })}
+                ➕ Add "{inputValue}" manually
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

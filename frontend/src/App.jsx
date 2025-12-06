@@ -37,12 +37,12 @@ export default function App() {
   
   // Form data for expenses
   const [expForm, setExpForm] = useState({
-    desc: '', amount: '', category: 'Food', date: today(), addedBy: 'Ravi'
+    desc: '', amount: '', category: 'Food', date: today(), addedBy: 'Ravi', paymentMethod: 'Online'
   });
 
   // Form data for incomes
   const [incForm, setIncForm] = useState({
-    source: '', amount: '', category: 'Salary', date: today(), addedBy: 'Ravi'
+    source: '', amount: '', category: 'Salary', date: today(), addedBy: 'Ravi', paymentMethod: 'Online'
   });
 
   // Custom hooks for data management
@@ -103,6 +103,7 @@ export default function App() {
       // Load data in parallel
       await Promise.all([
         fetchInvestments(),
+        refreshIncomes(),
         fetchExpenses(),
         fetchSettings(),
       ]);
@@ -242,7 +243,8 @@ export default function App() {
         amount: parseFloat(expForm.amount),
         category: expForm.category,
         date: expForm.date,
-        addedBy: expForm.addedBy
+        addedBy: expForm.addedBy,
+        paymentMethod: expForm.paymentMethod
       };
       
       if (editingItem) {
@@ -257,7 +259,7 @@ export default function App() {
   };
 
   const resetExpForm = () => {
-    setExpForm({ desc: '', amount: '', category: 'Food', date: today(), addedBy: 'Ravi' });
+    setExpForm({ desc: '', amount: '', category: 'Food', date: today(), addedBy: 'Ravi', paymentMethod: 'Online' });
     setEditingItem(null);
     setShowForm(null);
   };
@@ -268,7 +270,8 @@ export default function App() {
       amount: String(exp.amount),
       category: exp.category,
       date: exp.date,
-      addedBy: exp.addedBy || 'Ravi'
+      addedBy: exp.addedBy || 'Ravi',
+      paymentMethod: exp.paymentMethod || 'Online'
     });
     setEditingItem(exp.id);
     setShowForm('expense');
@@ -277,6 +280,57 @@ export default function App() {
   const deleteExp = async (id) => {
     if (!confirm('Delete this expense?')) return;
     await deleteExpense(id);
+  };
+
+  // ----- INCOME FUNCTIONS -----
+
+  const saveIncome = async () => {
+    if (!incForm.source || !incForm.amount) return;
+    
+    try {
+      const data = {
+        source: incForm.source,
+        amount: parseFloat(incForm.amount),
+        category: incForm.category,
+        date: incForm.date,
+        addedBy: incForm.addedBy,
+        paymentMethod: incForm.paymentMethod
+      };
+      
+      if (editingItem) {
+        await updateIncome(editingItem, data);
+      } else {
+        await addIncome(data);
+      }
+      resetIncForm();
+    } catch (err) {
+      console.error('Error saving income:', err);
+      alert('Error saving income: ' + (err.message || err));
+    }
+  };
+
+  const resetIncForm = () => {
+    setIncForm({ source: '', amount: '', category: 'Salary', date: today(), addedBy: 'Ravi', paymentMethod: 'Online' });
+    setEditingItem(null);
+    setShowForm(null);
+  };
+
+  const editInc = (inc) => {
+    setIncForm({
+      source: inc.source,
+      amount: String(inc.amount),
+      category: inc.category,
+      date: inc.date,
+      addedBy: inc.addedBy || 'Ravi',
+      paymentMethod: inc.paymentMethod || 'Online'
+    });
+    setEditingItem(inc.id);
+    setShowForm('income');
+  };
+
+  const deleteInc = async (id) => {
+    if (!confirm('Delete this income?')) return;
+    await deleteIncome(id);
   };
 
   // ----- EXPORT/IMPORT -----
@@ -388,8 +442,15 @@ export default function App() {
                 <AutocompleteInput
                   value={invForm.name}
                   onChange={e => setInvForm({...invForm, name: e.target.value, schemeCode: ''})}
-                  onSelect={(fund) => setInvForm({...invForm, name: fund.schemeName, schemeCode: fund.schemeCode})}
-                  placeholder="Search mutual fund (e.g., HDFC Flexi Cap)"
+                  onSelect={(fund) => {
+                    // Handle both API results and manual entries
+                    if (fund.isManual) {
+                      setInvForm({...invForm, name: fund.schemeName, schemeCode: ''});
+                    } else {
+                      setInvForm({...invForm, name: fund.schemeName, schemeCode: fund.schemeCode || ''});
+                    }
+                  }}
+                  placeholder="Search mutual fund (e.g., HDFC Flexi Cap, Nifty 50 Index)"
                   searchFunction={searchMutualFunds}
                   displayKey="schemeName"
                   minChars={3}
@@ -518,6 +579,90 @@ export default function App() {
           </div>
         )}
 
+        {/* ===== INCOME TAB ===== */}
+        {tab === 'income' && (
+          <div className="list-view">
+            {/* Total Income Summary */}
+            <div className="card center">
+              <span className="label">Total Income</span>
+              <span className="value gain">{fmt(incomes.reduce((sum, inc) => sum + inc.amount, 0))}</span>
+            </div>
+
+            <button className="add-btn" onClick={() => setShowForm('income')}>
+              + Add Income
+            </button>
+
+            {/* Income Form */}
+            {showForm === 'income' && (
+              <div className="form card">
+                <input
+                  placeholder="Source (e.g., Salary, Freelance)"
+                  value={incForm.source}
+                  onChange={e => setIncForm({...incForm, source: e.target.value})}
+                />
+                <div className="grid-2">
+                  <input
+                    type="number"
+                    placeholder="Amount ₹"
+                    value={incForm.amount}
+                    onChange={e => setIncForm({...incForm, amount: e.target.value})}
+                  />
+                  <select
+                    value={incForm.category}
+                    onChange={e => setIncForm({...incForm, category: e.target.value})}
+                  >
+                    {settings?.incomeCategories?.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                  <select
+                    value={incForm.addedBy}
+                    onChange={e => setIncForm({...incForm, addedBy: e.target.value})}
+                  >
+                    {settings?.members?.map(m => <option key={m}>{m}</option>)}
+                  </select>
+                  <select
+                    value={incForm.paymentMethod}
+                    onChange={e => setIncForm({...incForm, paymentMethod: e.target.value})}
+                  >
+                    {settings?.paymentMethods?.map(pm => <option key={pm}>{pm}</option>)}
+                  </select>
+                  <input
+                    type="date"
+                    value={incForm.date}
+                    onChange={e => setIncForm({...incForm, date: e.target.value})}
+                  />
+                </div>
+                <div className="btn-row">
+                  <button className="primary" onClick={saveIncome}>
+                    {editingItem ? 'Update' : 'Save'}
+                  </button>
+                  <button onClick={resetIncForm}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {/* Income List */}
+            <div className="items-grid">
+              {incomes
+                .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
+                .map(inc => (
+                  <div key={inc.id} className="card item">
+                    <div className="item-header">
+                      <div>
+                        <h4>{inc.source}</h4>
+                        <small>{inc.date} • {inc.category} • {inc.paymentMethod || 'N/A'} • {inc.addedBy}</small>
+                      </div>
+                      <div className="item-actions">
+                        <span className="amount gain">+{fmt(inc.amount)}</span>
+                        <button onClick={() => editInc(inc)}>Edit</button>
+                        <button className="danger" onClick={() => deleteInc(inc.id)}>Del</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* ===== EXPENSES TAB ===== */}
         {tab === 'expenses' && (
           <div className="list-view">
@@ -558,6 +703,12 @@ export default function App() {
                   >
                     {settings?.members?.map(m => <option key={m}>{m}</option>)}
                   </select>
+                  <select
+                    value={expForm.paymentMethod}
+                    onChange={e => setExpForm({...expForm, paymentMethod: e.target.value})}
+                  >
+                    {settings?.paymentMethods?.map(pm => <option key={pm}>{pm}</option>)}
+                  </select>
                   <input
                     type="date"
                     value={expForm.date}
@@ -582,7 +733,7 @@ export default function App() {
                     <div className="item-header">
                       <div>
                         <h4>{exp.desc}</h4>
-                        <small>{exp.date} • {exp.category} • {exp.addedBy}</small>
+                        <small>{exp.date} • {exp.category} • {exp.paymentMethod || 'N/A'} • {exp.addedBy}</small>
                       </div>
                       <div className="item-actions">
                         <span className="amount">{fmt(exp.amount)}</span>

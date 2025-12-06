@@ -381,25 +381,12 @@ input[type="date"]:hover {
 
 /* Style the calendar icon */
 input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0.75rem;
   cursor: pointer;
-  border-radius: 4px;
-  padding: 8px;
-  margin-right: -4px;
-  opacity: 1;
-  transition: all 0.2s ease;
-  background: transparent;
-  position: relative;
+  opacity: 0;
   width: 1.5rem;
   height: 1.5rem;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 0.7;
-  transform: scale(1.1);
-}
-
-input[type="date"]:focus::-webkit-calendar-picker-indicator {
-  opacity: 0.9;
 }
 
 /* Remove default date input clear button in Edge/IE */

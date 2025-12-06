@@ -40,13 +40,34 @@ export const searchMutualFunds = async (query, allFunds = null) => {
 
     const searchTerm = query.toLowerCase().trim();
     
-    // Search in scheme name
+    // Search in scheme name with prioritization
     const results = funds.filter(fund => 
       fund.schemeName.toLowerCase().includes(searchTerm)
     );
 
-    // Limit results to 10 for better UX
-    return results.slice(0, 10);
+    // Sort results: prioritize exact word matches and index funds
+    results.sort((a, b) => {
+      const aName = a.schemeName.toLowerCase();
+      const bName = b.schemeName.toLowerCase();
+      
+      // Prioritize exact matches at the start
+      const aStartsWith = aName.startsWith(searchTerm);
+      const bStartsWith = bName.startsWith(searchTerm);
+      if (aStartsWith && !bStartsWith) return -1;
+      if (!aStartsWith && bStartsWith) return 1;
+      
+      // Prioritize index funds
+      const aIsIndex = aName.includes('index');
+      const bIsIndex = bName.includes('index');
+      if (aIsIndex && !bIsIndex) return -1;
+      if (!aIsIndex && bIsIndex) return 1;
+      
+      // Default alphabetical
+      return aName.localeCompare(bName);
+    });
+
+    // Limit results to 15 for better coverage (increased from 10)
+    return results.slice(0, 15);
   } catch (error) {
     console.error('Error searching mutual funds:', error);
     return [];

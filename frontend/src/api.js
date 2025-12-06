@@ -52,7 +52,8 @@ async function request(endpoint, options = {}) {
 
     // If request failed, throw error
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || errorData.message || `API Error: ${response.statusText}`);
     }
 
     // Parse JSON response
