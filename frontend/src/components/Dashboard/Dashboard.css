@@ -12,15 +12,23 @@
 }
 
 /* ============================================
-   DASHBOARD TABS
+   DASHBOARD HEADER WITH TABS AND FILTER
    ============================================ */
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
 
 .dashboard-tabs {
   display: flex;
   gap: 0.5rem;
-  padding: 0 0 0.75rem 0;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
-  margin-bottom: 1rem;
   flex-shrink: 0;
 }
 
@@ -90,6 +98,53 @@
   .tab-button {
     padding: 0.5rem 1rem;
     font-size: 0.8125rem;
+  }
+}
+
+/* ============================================
+   USER FILTER DROPDOWN / MONTH FILTER
+   ============================================ */
+
+.user-filter,
+.month-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.user-filter label,
+.month-filter label {
+  font-weight: 500;
+  color: #667eea;
+  font-size: 0.9375rem;
+}
+
+.user-filter select,
+.month-filter input[type="month"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 0.375rem;
+  background: white;
+  color: #2d3748;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-filter select:hover,
+.month-filter input[type="month"]:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.user-filter select:focus,
+.month-filter input[type="month"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
     gap: 0.375rem;
   }
 

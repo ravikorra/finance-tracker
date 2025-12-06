@@ -29,6 +29,13 @@ export default function App() {
   const [editingItem, setEditingItem] = useState(null);
   const [globalError, setGlobalError] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  
+  // Month filter for tabs (YYYY-MM format)
+  const getCurrentMonthString = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthString());
 
   // Form data for investments
   const [invForm, setInvForm] = useState({
@@ -413,12 +420,24 @@ export default function App() {
             investments={investments}
             incomes={incomes}
             expenses={expenses}
+            members={settings?.members || []}
           />
         )}
 
         {/* ===== INVESTMENTS TAB ===== */}
         {tab === 'investments' && (
           <div className="list-view">
+            {/* Month Filter */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+              <label style={{ fontWeight: 500, color: '#667eea' }}>Filter by Month:</label>
+              <input 
+                type="month" 
+                value={selectedMonth} 
+                onChange={e => setSelectedMonth(e.target.value)}
+                style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(102, 126, 234, 0.3)', borderRadius: '0.375rem', cursor: 'pointer' }}
+              />
+            </div>
+
             <button className="add-btn" onClick={() => setShowForm('investment')}>
               + Add Investment
             </button>
@@ -522,7 +541,9 @@ export default function App() {
 
             {/* Investment List */}
             <div className="items-grid">
-              {invArray.map(inv => {
+              {invArray
+                .filter(inv => inv.date?.startsWith(selectedMonth))
+                .map(inv => {
                 const currentNAV = inv.units && inv.units > 0 ? (inv.current / inv.units) : null;
                 const purchaseNAV = inv.units && inv.units > 0 ? (inv.invested / inv.units) : null;
                 
@@ -583,10 +604,21 @@ export default function App() {
         {/* ===== INCOME TAB ===== */}
         {tab === 'income' && (
           <div className="list-view">
+            {/* Month Filter */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+              <label style={{ fontWeight: 500, color: '#667eea' }}>Filter by Month:</label>
+              <input 
+                type="month" 
+                value={selectedMonth} 
+                onChange={e => setSelectedMonth(e.target.value)}
+                style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(102, 126, 234, 0.3)', borderRadius: '0.375rem', cursor: 'pointer' }}
+              />
+            </div>
+
             {/* Total Income Summary */}
             <div className="card center">
-              <span className="label">Total Income</span>
-              <span className="value gain">{fmt(incArray.reduce((sum, inc) => sum + inc.amount, 0))}</span>
+              <span className="label">Total Income ({selectedMonth})</span>
+              <span className="value gain">{fmt(incArray.filter(inc => inc.date?.startsWith(selectedMonth)).reduce((sum, inc) => sum + inc.amount, 0))}</span>
             </div>
 
             <button className="add-btn" onClick={() => setShowForm('income')}>
@@ -644,6 +676,7 @@ export default function App() {
             {/* Income List */}
             <div className="items-grid">
               {incArray
+                .filter(inc => inc.date?.startsWith(selectedMonth))
                 .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
                 .map(inc => (
                   <div key={inc.id} className="card item">
@@ -667,10 +700,21 @@ export default function App() {
         {/* ===== EXPENSES TAB ===== */}
         {tab === 'expenses' && (
           <div className="list-view">
+            {/* Month Filter */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+              <label style={{ fontWeight: 500, color: '#667eea' }}>Filter by Month:</label>
+              <input 
+                type="month" 
+                value={selectedMonth} 
+                onChange={e => setSelectedMonth(e.target.value)}
+                style={{ padding: '0.5rem 0.75rem', border: '1px solid rgba(102, 126, 234, 0.3)', borderRadius: '0.375rem', cursor: 'pointer' }}
+              />
+            </div>
+
             {/* Monthly Total */}
             <div className="card center">
-              <span className="label">This Month</span>
-              <span className="value loss">{fmt(totalMonthly)}</span>
+              <span className="label">{selectedMonth}</span>
+              <span className="value loss">{fmt(expArray.filter(e => e.date?.startsWith(selectedMonth)).reduce((sum, e) => sum + (e.amount || 0), 0))}</span>
             </div>
 
             <button className="add-btn" onClick={() => setShowForm('expense')}>
@@ -728,6 +772,7 @@ export default function App() {
             {/* Expense List */}
             <div className="items-grid">
               {expArray
+                .filter(exp => exp.date?.startsWith(selectedMonth))
                 .sort((a, b) => b.date?.localeCompare(a.date)) // Newest first
                 .map(exp => (
                   <div key={exp.id} className="card item">

@@ -14,23 +14,30 @@ import './AnalyticsView.css';
 
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#f97316'];
 
-export const AnalyticsView = ({ investments, incomes, expenses }) => {
+export const AnalyticsView = ({ investments, incomes, expenses, selectedMonth = null }) => {
   // Safe arrays for rendering
   const invArray = Array.isArray(investments) ? investments : [];
   const incArray = Array.isArray(incomes) ? incomes : [];
   const expArray = Array.isArray(expenses) ? expenses : [];
 
-  const totalInvested = calculateTotalInvested(invArray);
-  const totalCurrent = calculateTotalCurrent(invArray);
-  const totalGain = calculateTotalGain(invArray);
+  // Get current month if not selected
+  const currentMonth = selectedMonth || getCurrentMonth();
+
+  // Filter by selected month/year
+  const monthlyInvArray = invArray.filter(inv => inv.date?.startsWith(currentMonth));
+  const monthlyIncArray = incArray.filter(inc => inc.date?.startsWith(currentMonth));
+  const monthlyExpArray = expArray.filter(exp => exp.date?.startsWith(currentMonth));
+
+  const totalInvested = calculateTotalInvested(monthlyInvArray);
+  const totalCurrent = calculateTotalCurrent(monthlyInvArray);
+  const totalGain = calculateTotalGain(monthlyInvArray);
   
-  const currentMonth = getCurrentMonth();
-  // Show ALL income, not just current month
-  const totalMonthlyIncome = incArray.reduce((sum, inc) => sum + (inc.amount || 0), 0);
-  const gainPct = calculateGainPercentage(invArray);
+  // Calculate total income for selected month
+  const totalMonthlyIncome = monthlyIncArray.reduce((sum, inc) => sum + (inc.amount || 0), 0);
+  const gainPct = calculateGainPercentage(monthlyInvArray);
   
-  const monthlyExpenses = expArray.filter(e => e.date?.startsWith(currentMonth));
-  const totalMonthly = calculateMonthlyExpenses(expArray);
+  const monthlyExpenses = monthlyExpArray;
+  const totalMonthly = calculateMonthlyExpenses(monthlyExpArray);
   
   const byCategory = groupExpensesByCategory(monthlyExpenses);
   const byInvType = groupInvestmentsByType(invArray);
